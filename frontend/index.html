@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="data:," />
+<title>疆光 · 光伏清洗决策驾驶舱</title>
+<style>
+  :root {
+    --bg: #070d16;
+    --panel: #0d1626;
+    --panel-2: #142136;
+    --line: #1e304c;
+    --line-soft: #16243a;
+    --text: #e9f0fb;
+    --text-2: #93a7c4;
+    --text-3: #5f7391;
+    --gold: #f5b544;
+    --green: #2fd6a5;
+    --red: #ef6b6b;
+    --blue: #4ea8ff;
+    --purple: #a78bfa;
+    --orange: #f08a4b;
+    --r-12: 12px;
+    --r-10: 10px;
+    --r-8: 8px;
+    --shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(1200px 560px at 10% -12%, #12304f 0%, transparent 60%),
+      radial-gradient(900px 460px at 94% -6%, #3a2a12 0%, transparent 55%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 0 16px 40px; }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 0;
+    background: linear-gradient(180deg, rgba(7,13,22,.96), rgba(7,13,22,.72));
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .brand { font-size: 17px; font-weight: 700; letter-spacing: .4px; white-space: nowrap; }
+  .brand span { color: var(--gold); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--text-2);
+    background: rgba(20,33,54,.6); white-space: nowrap;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); }
+  .badge.good { color: var(--green); border-color: rgba(47,214,165,.34); background: rgba(47,214,165,.08); }
+  .badge.good .dot { background: var(--green); }
+  .badge.warn { color: var(--gold); border-color: rgba(245,181,68,.34); background: rgba(245,181,68,.08); }
+  .badge.warn .dot { background: var(--gold); }
+  .badge.info { color: var(--blue); border-color: rgba(78,168,255,.34); background: rgba(78,168,255,.08); }
+  .badge.info .dot { background: var(--blue); }
+  .badge.bad { color: var(--red); border-color: rgba(239,107,107,.34); background: rgba(239,107,107,.08); }
+  .badge.bad .dot { background: var(--red); }
+  .top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  button.ghost {
+    background: transparent; color: var(--text-2); border: 1px solid var(--line);
+    border-radius: var(--r-8); padding: 7px 12px; font-size: 12.5px; cursor: pointer;
+  }
+  button.ghost:hover { color: var(--text); border-color: var(--gold); }
+  button.ghost:disabled { opacity: .4; cursor: not-allowed; }
+
+  .kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin: 14px 0;
+  }
+  .kpi {
+    position: relative; overflow: hidden;
+    background: linear-gradient(180deg, rgba(21,33,54,.9), rgba(13,22,38,.9));
+    border: 1px solid var(--line); border-radius: var(--r-12);
+    padding: 13px 14px; min-width: 0;
+  }
+  .kpi::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--gold); opacity: .85;
+  }
+  .kpi.g::after { background: var(--green); }
+  .kpi.b::after { background: var(--blue); }
+  .kpi.p::after { background: var(--purple); }
+  .kpi .label { font-size: 11.5px; color: var(--text-3); letter-spacing: .4px; }
+  .kpi .value { font-size: 24px; font-weight: 700; margin-top: 5px; line-height: 1.15; }
+  .kpi .value small { font-size: 12px; font-weight: 500; color: var(--text-2); margin-left: 3px; }
+  .kpi .foot { font-size: 11px; color: var(--text-3); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 380px;
+    gap: 12px;
+    align-items: start;
+  }
+  .panel {
+    background: linear-gradient(180deg, rgba(21,33,54,.82), rgba(13,22,38,.82));
+    border: 1px solid var(--line); border-radius: var(--r-12);
+    min-width: 0; overflow: hidden;
+  }
+  .panel > h2 {
+    margin: 0; padding: 11px 13px; font-size: 12px; font-weight: 600;
+    color: var(--text-2); letter-spacing: .6px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel > h2 .hint { margin-left: auto; font-size: 10.5px; color: var(--text-3); font-weight: 400; }
+  .pad { padding: 13px; }
+
+  .params label { display: block; font-size: 11.5px; color: var(--text-3); margin: 9px 0 5px; }
+  .params input, .params select {
+    width: 100%; background: #081120; color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r-8);
+    padding: 8px 10px; font-size: 13.5px; outline: none;
+  }
+  .params input:focus, .params select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,181,68,.1); }
+  .mcp {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10.5px; color: var(--text-3);
+    border: 1px dashed var(--line); border-left: 2px solid var(--blue);
+    background: rgba(78,168,255,.05); border-radius: var(--r-8);
+    padding: 6px 9px; margin: 2px 0;
+  }
+  .mcp .tag-mcp { color: var(--blue); font-weight: 600; }
+  .mcp .ok { color: var(--green); }
+  .mcp .err { color: var(--red); }
+  .presets { display: flex; gap: 6px; margin-top: 10px; }
+  .presets button {
+    flex: 1; font-size: 11px; padding: 6px 4px; cursor: pointer;
+    background: #0a1424; color: var(--text-2);
+    border: 1px solid var(--line); border-radius: var(--r-8);
+  }
+  .presets button:hover { color: var(--text); border-color: var(--gold); }
+  button.run {
+    width: 100%; margin-top: 12px; padding: 10px; border: 0;
+    border-radius: var(--r-10); cursor: pointer;
+    background: linear-gradient(135deg, #d9962a, var(--gold));
+    color: #201502; font-size: 13.5px; font-weight: 700;
+    transition: filter .15s;
+  }
+  button.run:hover { filter: brightness(1.07); }
+  button.run:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+  .site { margin-top: 11px; padding-top: 10px; border-top: 1px dashed var(--line-soft); font-size: 11.5px; color: var(--text-3); line-height: 1.9; }
+  .site b { color: var(--text-2); font-weight: 600; }
+
+  .timeline { max-height: 640px; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+  .timeline::-webkit-scrollbar { width: 8px; }
+  .timeline::-webkit-scrollbar-thumb { background: #1b2c46; border-radius: 4px; }
+  .round { text-align: center; font-size: 10.5px; color: var(--text-3); letter-spacing: 1px; margin: 4px 0; }
+  .round::before, .round::after { content: ""; display: inline-block; width: 32px; height: 1px; background: var(--line); vertical-align: middle; margin: 0 7px; }
+
+  .agent {
+    border: 1px solid var(--line); border-left: 3px solid var(--blue);
+    background: rgba(9,16,29,.8); border-radius: var(--r-10);
+    padding: 10px 12px; animation: in .25s ease;
+  }
+  @keyframes in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  .agent.weather { border-left-color: var(--blue); }
+  .agent.soiling { border-left-color: var(--purple); }
+  .agent.economics { border-left-color: var(--gold); }
+  .agent.ops { border-left-color: var(--green); }
+  .agent.critic { border-left-color: #cfd9ea; }
+  .agent.arbiter { border-left-color: var(--red); background: rgba(239,107,107,.05); }
+  .agent .head { display: flex; align-items: center; gap: 7px; }
+  .avatar {
+    width: 20px; height: 20px; border-radius: 5px; flex: none;
+    display: grid; place-items: center; font-size: 10px; font-weight: 700;
+    background: var(--blue); color: #061020;
+  }
+  .agent.soiling .avatar { background: var(--purple); }
+  .agent.economics .avatar { background: var(--gold); }
+  .agent.ops .avatar { background: var(--green); }
+  .agent.critic .avatar { background: #cfd9ea; }
+  .agent.arbiter .avatar { background: var(--red); }
+  .who { font-size: 12px; font-weight: 600; }
+  .goal { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+  .stance { margin-left: auto; font-size: 10.5px; padding: 2px 7px; border-radius: 999px; flex: none; }
+  .stance.support { color: var(--green); background: rgba(47,214,165,.1); }
+  .stance.object { color: var(--red); background: rgba(239,107,107,.1); }
+  .stance.propose { color: var(--gold); background: rgba(245,181,68,.1); }
+  .msg { margin: 7px 0 0; font-size: 12.5px; line-height: 1.65; color: #d3e0f2; }
+  .conf-row { display: flex; align-items: center; gap: 7px; margin-top: 8px; }
+  .conf-bar { flex: 1; height: 5px; border-radius: 999px; background: #16263f; overflow: hidden; max-width: 160px; }
+  .conf-bar i { display: block; height: 100%; border-radius: 999px; background: var(--green); transition: width .3s; }
+  .conf-bar i.object { background: var(--red); }
+  .conf-bar i.propose { background: var(--gold); }
+  .conf-num { font-size: 10.5px; color: var(--text-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .chip {
+    font-size: 10.5px; color: var(--text-2); border: 1px solid var(--line);
+    background: #0a1424; border-radius: 6px; padding: 2px 6px; cursor: pointer;
+  }
+  .chip:hover { color: var(--text); border-color: var(--blue); }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip.kb { color: var(--blue); border-color: rgba(78,168,255,.32); text-decoration: none; }
+  .chip.kb:hover { border-color: var(--blue); color: #cfe6ff; }
+  .chip.kb.unverified { color: var(--gold); border-color: rgba(245,181,68,.32); }
+  .ev-table { display: none; margin-top: 7px; border: 1px solid var(--line); border-radius: var(--r-8); overflow: hidden; }
+  .ev-table.open { display: block; }
+  .ev-table .row { display: grid; grid-template-columns: 1.2fr .8fr .8fr .7fr; gap: 6px; padding: 6px 8px; font-size: 10.5px; border-bottom: 1px solid var(--line-soft); }
+  .ev-table .row:last-child { border-bottom: 0; }
+  .ev-table .row.head { color: var(--text-3); background: #0a1424; }
+  .ev-table .v { color: var(--text); }
+  .verdict-bad { color: var(--red); }
+
+  .verdict-panel { padding: 13px; }
+  .verdict {
+    border-radius: var(--r-10); border: 1px solid var(--line);
+    background: #0a1424; padding: 13px;
+  }
+  .verdict .k { font-size: 10.5px; color: var(--text-3); letter-spacing: .5px; }
+  .verdict .v { font-size: 27px; font-weight: 700; margin: 5px 0 3px; line-height: 1.2; }
+  .verdict.clean .v { color: var(--green); }
+  .verdict.defer .v { color: var(--gold); }
+  .verdict.hold .v { color: var(--text-2); }
+  .verdict .why { font-size: 12px; color: #c3d1e7; line-height: 1.65; }
+  .scope-tag { display: inline-block; margin-left: 6px; font-size: 10.5px; color: var(--gold); border: 1px solid rgba(245,181,68,.35); border-radius: 999px; padding: 1px 7px; }
+
+  .wf { margin-top: 11px; border: 1px solid var(--line); border-radius: var(--r-8); padding: 9px 10px; background: #0a1424; }
+  .wf .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; font-size: 11.5px; padding: 4px 0; }
+  .wf .k { color: var(--text-3); }
+  .wf .val { font-weight: 600; text-align: right; }
+  .wf .bar { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: #16263f; overflow: hidden; }
+  .wf .bar i { display: block; height: 100%; background: var(--green); border-radius: 3px; }
+  .wf .bar.neg i { background: var(--red); }
+  .wf .row.total { border-top: 1px dashed var(--line); margin-top: 3px; padding-top: 7px; }
+  .wf .row.total .val { color: var(--gold); font-size: 14px; }
+
+  .weather-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 11px; }
+  .wday { border: 1px solid var(--line); border-radius: var(--r-8); background: #0a1424; padding: 7px 8px; min-width: 0; }
+  .wday.best { border-color: rgba(245,181,68,.5); background: rgba(245,181,68,.06); }
+  .wday .d { font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wday .irr { font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .wday .m { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+  .wday .tag { display: inline-block; font-size: 9px; color: var(--gold); border: 1px solid rgba(245,181,68,.4); border-radius: 4px; padding: 0 4px; margin-top: 3px; }
+
+  .data-foot { margin-top: 11px; font-size: 10.5px; color: var(--text-3); line-height: 1.7; }
+  .data-foot .ok { color: var(--green); }
+  .data-foot .demo { color: var(--blue); }
+  .data-foot .bad { color: var(--red); }
+
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .chart-box { padding: 12px 13px; }
+  .chart-box h3 { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--text-2); display: flex; }
+  .chart-box h3 small { margin-left: auto; font-weight: 400; color: var(--text-3); font-size: 10.5px; }
+  .chart-box svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; gap: 12px; margin-top: 6px; font-size: 10.5px; color: var(--text-3); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+  .history { margin-top: 12px; }
+  .history table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .history th { text-align: left; color: var(--text-3); font-weight: 500; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .history td { padding: 8px 10px; border-bottom: 1px solid var(--line-soft); color: var(--text-2); }
+  .history tr:last-child td { border-bottom: 0; }
+  .history .num { font-variant-numeric: tabular-nums; color: var(--text); }
+  .history .act { font-weight: 600; }
+  .history .act.clean { color: var(--green); }
+  .history .act.defer { color: var(--gold); }
+  .history .act.hold { color: var(--text-2); }
+  .history button { font-size: 10.5px; padding: 3px 8px; }
+
+  .empty { color: var(--text-3); font-size: 12px; line-height: 1.8; padding: 6px 0; }
+  .agent-panel { margin-top: 12px; }
+  .agent-row { display: flex; gap: 8px; }
+  .agent-row input {
+    flex: 1; background: #081120; color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--r-8);
+    padding: 8px 10px; font-size: 13px; outline: none;
+  }
+  .agent-row input:focus { border-color: var(--gold); }
+  .agent-row .run { width: 120px; margin: 0; padding: 8px; }
+  .agent-feed { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+  .astep { border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 8px; background: #0a1424; padding: 8px 10px; font-size: 11.5px; color: var(--text-2); }
+  .astep .t { color: var(--text); font-weight: 600; margin-right: 6px; }
+  .astep.decision { border-left-color: var(--gold); }
+  .astep.tool { border-left-color: var(--purple); }
+  .astep.result { border-left-color: var(--green); }
+  .astep.answer { border-left-color: var(--blue); background: rgba(78,168,255,.07); }
+  .astep.error { border-left-color: var(--red); }
+  .astep pre { margin: 6px 0 0; max-height: 110px; overflow: auto; font-size: 10.5px; color: var(--text-3); white-space: pre-wrap; word-break: break-all; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #122036; color: var(--text); border: 1px solid var(--line);
+    padding: 9px 16px; border-radius: var(--r-10); font-size: 12.5px;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .2s;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 1280px) {
+    .workspace { grid-template-columns: 250px minmax(0, 1fr) 340px; }
+  }
+  @media (max-width: 1024px) {
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .verdict-panel { order: -1; }
+    .timeline { max-height: 520px; }
+    .charts { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .wrap { padding: 0 10px 32px; }
+    .brand { font-size: 15px; }
+    .badge.site, .badge.mode { display: none; }
+    .kpis { gap: 8px; }
+    .kpi { padding: 10px 11px; }
+    .kpi .value { font-size: 20px; }
+    .workspace { gap: 9px; }
+    .weather-strip { grid-template-columns: 1fr; }
+    .history { overflow-x: auto; }
+    .history table { min-width: 560px; }
+    .top-actions button { padding: 6px 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">疆光<span>·</span>清洗决策驾驶舱</div>
+    <span class="badge site" id="siteBadge"><i class="dot"></i>站点加载中</span>
+    <span class="badge" id="qualityBadge"><i class="dot"></i>数据待加载</span>
+    <span class="badge mode" id="modeBadge"><i class="dot"></i>模式检测中</span>
+    <div class="top-actions">
+      <button class="ghost" id="exportBtn" disabled>导出报告</button>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi b">
+      <div class="label">理论日发电量</div>
+      <div class="value" id="kpiTheory">--<small>MWh</small></div>
+      <div class="foot" id="kpiTheoryFoot">等待决策</div>
+    </div>
+    <div class="kpi p">
+      <div class="label">污损损失</div>
+      <div class="value" id="kpiLoss">--<small>%</small></div>
+      <div class="foot" id="kpiLossFoot">PM10 --</div>
+    </div>
+    <div class="kpi g">
+      <div class="label">净收益（评估周期）</div>
+      <div class="value" id="kpiNet">--<small>元</small></div>
+      <div class="foot" id="kpiNetFoot">清洗成本 --</div>
+    </div>
+    <div class="kpi">
+      <div class="label">回本周期</div>
+      <div class="value" id="kpiPayback">--<small>天</small></div>
+      <div class="foot" id="kpiPaybackFoot">评估周期 -- 天</div>
+    </div>
+  </section>
+
+  <section class="workspace">
+    <aside class="panel params">
+      <h2>电站参数 <span class="hint">可调</span></h2>
+      <div class="pad">
+        <label>装机容量（MW）</label>
+        <input id="cap" type="number" min="0.5" max="5000" step="0.5" value="20" />
+        <label>距上次清洗（天）</label>
+        <input id="days" type="number" min="0" max="365" step="1" value="20" />
+        <label>上网电价（元/kWh）</label>
+        <input id="price" type="number" min="0.05" max="2" step="0.01" value="0.25" />
+        <label>清洗成本（元/次）</label>
+        <input id="cost" type="number" min="0" step="500" value="4000" />
+        <label>数据模式</label>
+        <select id="scenario">
+          <option value="demo">演示样例（离线可用）</option>
+          <option value="live">实时公开数据（Open-Meteo / PVGIS）</option>
+        </select>
+        <div class="presets">
+          <button data-preset="sand">沙尘后</button>
+          <button data-preset="normal">常规</button>
+          <button data-preset="low">低污损</button>
+        </div>
+        <button class="run" id="run">运行决策</button>
+        <div class="site" id="siteInfo">加载站点信息…</div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <h2>Agent 协商时间线 <span class="hint" id="timelineHint">等待运行</span></h2>
+      <div class="timeline" id="timeline">
+        <div class="empty">点击「运行决策」，观察气象、污损、收益、调度四个 Agent 基于同一份数据快照独立判断，意见冲突时由仲裁官给出折中方案。</div>
+      </div>
+    </section>
+
+    <aside class="panel verdict-panel" id="verdictPanel">
+      <div class="verdict hold" id="verdict">
+        <div class="k">决策结论</div>
+        <div class="v">等待决策</div>
+        <div class="why">运行后展示清洗结论、收益测算与执行窗口。</div>
+      </div>
+      <div class="wf" id="wf"><div class="empty">收益瀑布待生成</div></div>
+      <div class="weather-strip" id="weatherStrip"><div class="empty">天气窗口待加载</div></div>
+      <div class="data-foot" id="dataFoot"></div>
+    </aside>
+  </section>
+
+  <section class="charts">
+    <div class="panel chart-box">
+      <h3>未来三天辐照与降水 <small>Open-Meteo</small></h3>
+      <svg id="chartIrr" viewBox="0 0 520 170" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i style="background:#f5b544"></i>辐照 kWh/m²</span>
+        <span><i style="background:#4ea8ff"></i>降水 mm</span>
+        <span><i style="background:#93a7c4"></i>风速 m/s</span>
+      </div>
+    </div>
+    <div class="panel chart-box">
+      <h3>污损累计曲线 <small>污损模型估算</small></h3>
+      <svg id="chartSoil" viewBox="0 0 520 170" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i style="background:#a78bfa"></i>累计损失率 %</span>
+        <span><i style="background:#ef6b6b"></i>损失上限</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel agent-panel">
+    <h2>Agent 工具调用（Function Calling） <span class="hint" id="agentHint">模型自主决定调用哪些工具</span></h2>
+    <div class="pad">
+      <div class="agent-row">
+        <input id="agentQ" placeholder="例：昌吉明天适合清洗吗？现在洗能赚多少？" />
+        <button class="run" id="agentRun">问 Agent</button>
+      </div>
+      <div id="agentFeed" class="agent-feed">
+        <div class="empty">未配置 LLM 时此功能不可用；配置后模型会自主调用 get_site_data / search_knowledge / calc_economics。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel history">
+    <h2>历史决策记录 <span class="hint">本地保存，点击可回放</span></h2>
+    <div id="historyBody" class="empty" style="padding:12px">暂无记录，运行一次决策后自动保存。</div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const state = { config: null, session: null, metrics: null, opinions: [], inputs: {}, history: [], current: null };
+
+function $(id) { return document.getElementById(id); }
+function esc(v) {
+  return String(v == null ? "" : v)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+function fmt(v) { return num(v).toLocaleString("zh-CN"); }
+function fmt1(v) { return num(v).toFixed(1); }
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1800);
+}
+function actionLabel(a) { return { clean: "建议清洗", defer: "建议延后", hold: "暂不清洗" }[a] || a; }
+function stanceLabel(s) { return { support: "支持", object: "反对", propose: "提议" }[s] || s; }
+function shortName(a) { return { weather: "气象", soiling: "污损", economics: "收益", ops: "调度", arbiter: "仲裁", critic: "主席" }[a] || "A"; }
+
+fetch("/api/health").then(r => r.json()).then(d => {
+  $("modeBadge").innerHTML = '<i class="dot"></i>' + (d.mode === "llm" ? "LLM 增强模式" : "规则决策模式");
+}).catch(() => { $("modeBadge").innerHTML = '<i class="dot"></i>离线'; });
+
+fetch("/api/config").then(r => r.json()).then(c => {
+  state.config = c;
+  $("cap").value = c.site.capacity_mw;
+  $("days").value = c.site.days_since_clean;
+  $("price").value = c.economics.price_per_kwh;
+  $("cost").value = c.economics.cleaning_cost;
+  $("siteInfo").innerHTML =
+    "站点 <b>" + esc(c.site.name) + "</b><br/>坐标 <b>" + esc(c.site.lat) + ", " + esc(c.site.lng) + "</b><br/>" +
+    esc(c.site.city) + "<br/>系统效率 <b>" + esc(c.economics.efficiency) + "</b> · 评估周期 <b>" + esc(c.economics.horizon_days) + " 天</b>";
+  $("siteBadge").innerHTML = '<i class="dot"></i>' + esc(c.site.name);
+  loadHistory();
+}).catch(() => { $("siteInfo").textContent = "配置加载失败"; });
+
+function qualityBadge(dq) {
+  if (!dq) return { cls: "", text: "数据待加载" };
+  const q = dq.overall_quality || "demo";
+  const map = {
+    "live-good": { cls: "good", text: "实时数据 · 优质" },
+    "live-degraded": { cls: "warn", text: "实时数据 · 部分降级" },
+    "demo": { cls: "info", text: "演示数据（离线）" },
+    "fallback": { cls: "bad", text: "接口降级" }
+  };
+  return map[q] || { cls: "info", text: q };
+}
+function updateQuality(dq) {
+  const b = qualityBadge(dq);
+  $("qualityBadge").className = "badge " + b.cls;
+  $("qualityBadge").innerHTML = '<i class="dot"></i>' + esc(b.text);
+  const srcCls = (s) => s === "live" ? "ok" : (s === "demo" ? "demo" : "bad");
+  $("dataFoot").innerHTML =
+    "气象 <span class='" + srcCls(dq.forecast_quality) + "'>" + esc(dq.forecast_source || "--") + "</span> · " +
+    "空气质量 <span class='" + srcCls(dq.air_quality) + "'>" + esc(dq.air_source || "--") + "</span><br/>" +
+    "拉取时间 " + esc(dq.fetched_at || "--") + "<br/>" + esc(dq.note || "");
+}
+
+function renderKpis(m) {
+  const e = m.economics, s = m.soiling;
+  $("kpiTheory").innerHTML = fmt1(e.theory_mwh_day) + "<small>MWh</small>";
+  $("kpiTheoryFoot").textContent = e.theoretical_source === "pvgis"
+    ? "PVGIS E_d " + fmt1(e.pvgis && e.pvgis.E_d) + " kWh/kWp"
+    : "降级公式（气候均值缺失）";
+  $("kpiLoss").innerHTML = fmt1(s.loss_pct) + "<small>%</small>";
+  $("kpiLossFoot").textContent = "PM10 " + fmt1(s.pm10) + " · 运行 " + s.days + " 天";
+  $("kpiNet").innerHTML = fmt(e.net_gain) + "<small>元</small>";
+  $("kpiNetFoot").textContent = "清洗成本 " + fmt(e.cleaning_cost) + " 元";
+  $("kpiPayback").innerHTML = (e.payback_days == null ? "--" : fmt1(e.payback_days)) + "<small>天</small>";
+  $("kpiPaybackFoot").textContent = "评估周期 " + e.horizon_days + " 天";
+}
+
+function renderVerdict(m) {
+  const d = m.decision, e = m.economics;
+  const scope = e.scope === "partial" ? '<span class="scope-tag">分区 ' + esc(e.scope_ratio) + '%</span>' : '<span class="scope-tag">全站</span>';
+  $("verdict").className = "verdict " + (d.action || "hold");
+  $("verdict").innerHTML =
+    '<div class="k">决策结论' + scope + '</div>' +
+    '<div class="v">' + esc(actionLabel(d.action)) + '</div>' +
+    '<div class="why">' + esc(d.reason) + (d.window ? '；执行窗口 <b>' + esc(d.window) + '</b>' : "") + '</div>';
+
+  const max = Math.max(num(e.horizon_revenue), num(e.cleaning_cost) + num(e.downtime_loss), 1);
+  const row = (label, val, cls, width) =>
+    '<div class="row ' + cls + '"><span class="k">' + esc(label) + '</span><span class="val">' + esc(val) + '</span>' +
+    '<div class="bar ' + (cls === "neg" ? "neg" : "") + '"><i style="width:' + width + '%"></i></div></div>';
+  $("wf").innerHTML =
+    row("可恢复收益", fmt(e.horizon_revenue) + " 元", "", Math.max(2, num(e.horizon_revenue) / max * 100)) +
+    row("清洗成本", "-" + fmt(e.cleaning_cost) + " 元", "neg", Math.max(2, num(e.cleaning_cost) / max * 100)) +
+    row("停机损失", "-" + fmt(e.downtime_loss) + " 元", "neg", Math.max(2, num(e.downtime_loss) / max * 100)) +
+    '<div class="row total"><span class="k">净收益</span><span class="val">' + fmt(e.net_gain) + ' 元</span>' +
+    '<div class="bar"><i style="width:' + Math.min(100, Math.max(2, num(e.net_gain) / max * 100)) + '%"></i></div></div>';
+
+  const days = (m.weather && m.weather.days) || [];
+  const best = m.weather && m.weather.best_date;
+  $("weatherStrip").innerHTML = days.slice(0, 3).map(d2 =>
+    '<div class="wday' + (d2.date === best ? " best" : "") + '">' +
+    '<div class="d">' + esc(d2.date) + '</div>' +
+    '<div class="irr">' + esc(fmt1(d2.irradiance)) + ' kWh/m²</div>' +
+    '<div class="m">降水 ' + esc(fmt1(d2.rain)) + ' mm · 风 ' + esc(fmt1(d2.wind)) + ' m/s</div>' +
+    (d2.date === best ? '<span class="tag">推荐窗口</span>' : "") +
+    '</div>'
+  ).join("") || '<div class="empty">无天气数据</div>';
+}
+
+function renderAgent(evt) {
+  const el = document.createElement("div");
+  el.className = "agent " + esc(evt.agent);
+  const conf = evt.confidence;
+  const confHtml = (conf == null) ? "" :
+    '<div class="conf-row"><div class="conf-bar"><i class="' + esc(evt.stance) + '" style="width:' +
+    Math.max(2, Math.min(100, (num(conf) - 0.6) / 0.39 * 100)) + '%"></i></div>' +
+    '<span class="conf-num">置信度 ' + esc(num(conf).toFixed(2)) + '</span></div>';
+  const chips = (evt.evidence || []).map((e2, i) =>
+    '<span class="chip" data-ev="' + i + '">' + esc(e2.metric) + ' <b>' + esc(e2.value) + '</b> ' + esc(e2.unit) + '</span>'
+  ).join("");
+  const kbChips = (evt.kb_refs || []).map(r => {
+    const label = "[KB] " + r.id + (r.verified ? "" : " · 待核实");
+    const title = esc((r.snippet || "") + " · " + (r.source || ""));
+    return r.source_url
+      ? '<a class="chip kb' + (r.verified ? "" : " unverified") + '" href="' + esc(r.source_url) + '" target="_blank" rel="noopener" title="' + title + '">' + esc(label) + '</a>'
+      : '<span class="chip kb' + (r.verified ? "" : " unverified") + '" title="' + title + '">' + esc(label) + '</span>';
+  }).join("");
+  const table = (evt.evidence || []).length ? (
+    '<div class="ev-table"><div class="row head"><span>指标</span><span>值</span><span>阈值</span><span>判定</span></div>' +
+    evt.evidence.map(e2 => '<div class="row"><span>' + esc(e2.metric) + '</span><span class="v">' + esc(e2.value) + ' ' + esc(e2.unit) +
+      '</span><span>' + esc(e2.threshold) + '</span><span class="' + (e2.verdict === "exceed" || e2.verdict === "below" ? "verdict-bad" : "") + '">' + esc(e2.verdict) + '</span></div>').join("") +
+    '</div>'
+  ) : "";
+  el.innerHTML =
+    '<div class="head"><div class="avatar">' + esc(shortName(evt.agent)) + '</div>' +
+    '<div><div class="who">' + esc(evt.agent_name) + '</div><div class="goal">' + esc(evt.goal) + '</div></div>' +
+    '<span class="stance ' + esc(evt.stance) + '">' + esc(stanceLabel(evt.stance)) + '</span></div>' +
+    '<p class="msg">' + esc(evt.message) + '</p>' + confHtml +
+    (chips ? '<div class="chips">' + chips + '</div>' : "") +
+    (kbChips ? '<div class="chips kb-row">' + kbChips + '</div>' : "") + table;
+  el.querySelectorAll("[data-ev]").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const t = el.querySelector(".ev-table");
+      if (t) t.classList.toggle("open");
+    });
+  });
+  const tl = $("timeline");
+  tl.appendChild(el);
+  tl.scrollTop = tl.scrollHeight;
+}
+
+function addRound(n) {
+  const d = document.createElement("div");
+  d.className = "round";
+  d.textContent = "第 " + esc(n) + " 轮协商";
+  $("timeline").appendChild(d);
+}
+
+function addMcp(title, detail, ok) {
+  const d = document.createElement("div");
+  d.className = "mcp";
+  d.innerHTML = '<span class="tag-mcp">MCP</span><span>' + esc(title) + '</span>' +
+    '<span class="' + (ok === false ? "err" : "ok") + '" style="margin-left:auto">' + esc(detail || "") + '</span>';
+  $("timeline").appendChild(d);
+  $("timeline").scrollTop = $("timeline").scrollHeight;
+}
+
+function renderCharts(m) {
+  const days = (m.weather && m.weather.days) || [];
+  const W = 520, H = 170, padL = 34, padB = 30, padT = 16;
+  const maxIrr = Math.max(1, ...days.map(d => num(d.irradiance)));
+  const maxRain = Math.max(1, ...days.map(d => num(d.rain)));
+  const bw = days.length ? Math.min(56, (W - padL - 20) / days.length * 0.5) : 40;
+  const gap = days.length ? (W - padL - 20) / days.length : 160;
+  const baseY = H - padB;
+  let irrSvg = '<line x1="' + padL + '" y1="' + baseY + '" x2="' + (W - 10) + '" y2="' + baseY + '" stroke="#1e304c"/>';
+  days.forEach((d, i) => {
+    const x = padL + gap * i + (gap - bw) / 2;
+    const h = Math.max(2, num(d.irradiance) / maxIrr * (baseY - padT));
+    irrSvg += '<rect x="' + x + '" y="' + (baseY - h) + '" width="' + bw + '" height="' + h + '" rx="4" fill="#f5b544" opacity="0.85"/>';
+    irrSvg += '<text x="' + (x + bw / 2) + '" y="' + (baseY - h - 6) + '" fill="#e9f0fb" font-size="11" text-anchor="middle">' + esc(fmt1(d.irradiance)) + '</text>';
+    const rainH = Math.max(0, num(d.rain) / maxRain * 26);
+    if (rainH > 0) irrSvg += '<rect x="' + (x + bw - 10) + '" y="' + (baseY - rainH) + '" width="6" height="' + rainH + '" rx="2" fill="#4ea8ff" opacity="0.9"/>';
+    irrSvg += '<text x="' + (x + bw / 2) + '" y="' + (baseY + 16) + '" fill="#5f7391" font-size="10" text-anchor="middle">' + esc(String(d.date).slice(-5)) + '</text>';
+    irrSvg += '<text x="' + (x + bw / 2) + '" y="' + (baseY + 28) + '" fill="#5f7391" font-size="9" text-anchor="middle">风 ' + esc(fmt1(d.wind)) + '</text>';
+  });
+  $("chartIrr").innerHTML = irrSvg;
+
+  const s = m.soiling || { days: 0, daily_rate_pct: 0, loss_pct: 0 };
+  const totalDays = Math.max(1, num(s.days));
+  const rate = num(s.daily_rate_pct), loss = num(s.loss_pct);
+  const maxLoss = Math.max(loss, 1);
+  const yMax = Math.max(5, Math.ceil(maxLoss * 1.2));
+  const x = (i) => padL + (W - padL - 20) * (i / 20);
+  const y = (v) => (H - padB) - (v / yMax) * (H - padB - padT);
+  let pts = [];
+  for (let i = 0; i <= 20; i++) pts.push([x(i), y(Math.min(loss, rate * totalDays * (i / 20)))]);
+  let soilSvg = '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - 10) + '" y2="' + (H - padB) + '" stroke="#1e304c"/>' +
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (H - padB) + '" stroke="#1e304c"/>' +
+    '<polyline fill="none" stroke="#a78bfa" stroke-width="2.2" points="' + pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ") + '"/>';
+  soilSvg += '<line x1="' + padL + '" y1="' + y(yMax * 0.9) + '" x2="' + (W - 10) + '" y2="' + y(yMax * 0.9) + '" stroke="#ef6b6b" stroke-dasharray="4 4" opacity="0.7"/>';
+  soilSvg += '<text x="' + (padL + 4) + '" y="' + (y(yMax * 0.9) - 4) + '" fill="#ef6b6b" font-size="9">损失上限参考</text>';
+  soilSvg += '<text x="' + (padL + 4) + '" y="' + (padT + 4) + '" fill="#5f7391" font-size="9">%</text>';
+  soilSvg += '<text x="' + padL + '" y="' + (H - padB + 16) + '" fill="#5f7391" font-size="10">0 天</text>';
+  soilSvg += '<text x="' + (W - 46) + '" y="' + (H - padB + 16) + '" fill="#5f7391" font-size="10">' + esc(totalDays) + ' 天</text>';
+  soilSvg += '<text x="' + (W - 52) + '" y="' + (y(loss) - 6) + '" fill="#e9f0fb" font-size="11">' + esc(fmt1(loss)) + '%</text>';
+  $("chartSoil").innerHTML = soilSvg;
+}
+
+function loadHistory() {
+  try { state.history = JSON.parse(localStorage.getItem("pv_decisions_v1") || "[]"); } catch (e) { state.history = []; }
+  renderHistory();
+}
+function saveHistory(entry) {
+  state.history.unshift(entry);
+  state.history = state.history.slice(0, 20);
+  try { localStorage.setItem("pv_decisions_v1", JSON.stringify(state.history)); } catch (e) {}
+  renderHistory();
+}
+function renderHistory() {
+  const box = $("historyBody");
+  if (!state.history.length) {
+    box.className = "empty";
+    box.style.padding = "12px";
+    box.innerHTML = "暂无记录，运行一次决策后自动保存。";
+    return;
+  }
+  box.className = "";
+  box.innerHTML = '<table><thead><tr><th>时间</th><th>参数</th><th>结论</th><th>净收益</th><th>窗口</th><th></th></tr></thead><tbody>' +
+    state.history.map((h, i) =>
+      '<tr><td>' + esc(h.ts) + '</td><td>' + esc(h.params) + '</td>' +
+      '<td class="act ' + esc(h.action) + '">' + esc(actionLabel(h.action)) + '</td>' +
+      '<td class="num">' + esc(fmt(h.net_gain)) + ' 元</td><td>' + esc(h.window || "--") + '</td>' +
+      '<td><button class="ghost" data-replay="' + i + '">回放</button></td></tr>'
+    ).join("") + '</tbody></table>';
+  box.querySelectorAll("[data-replay]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const h = state.history[Number(btn.getAttribute("data-replay"))];
+      if (!h) return;
+      $("cap").value = h.cap; $("days").value = h.days; $("price").value = h.price; $("cost").value = h.cost;
+      $("scenario").value = h.scenario;
+      toast("已回放参数，可重新运行");
+    });
+  });
+}
+
+function buildReport(m, s) {
+  const e = m.economics, so = m.soiling, d = m.decision;
+  const lines = [];
+  lines.push("# 光伏电站清洗决策报告", "");
+  lines.push("- 生成时间：" + new Date().toLocaleString("zh-CN"));
+  lines.push("- 站点：" + (s.site.name || "--") + "（" + (s.site.lat) + ", " + (s.site.lng) + "）");
+  lines.push("- 装机容量：" + s.site.capacity_mw + " MW");
+  lines.push("- 数据模式：" + (s.scenario === "demo" ? "演示样例（离线）" : "实时公开数据"));
+  lines.push("- 数据质量：" + (m.data_quality.overall_quality || "--") + "，拉取时间 " + (m.data_quality.fetched_at || "--"), "");
+  lines.push("## 一、决策结论", "");
+  lines.push("- 结论：**" + actionLabel(d.action) + "**" + (e.scope === "partial" ? "（分区 " + e.scope_ratio + "%）" : "（全站）"));
+  lines.push("- 理由：" + d.reason);
+  lines.push("- 执行窗口：" + (d.window || "暂不执行"), "");
+  lines.push("## 二、收益测算", "");
+  lines.push("| 指标 | 数值 |", "|---|---|");
+  lines.push("| 理论日发电量 | " + e.theory_mwh_day + " MWh |");
+  lines.push("| 理论来源 | " + (e.theoretical_source === "pvgis" ? "PVGIS（ERA5 2005-2023）" : "降级公式") + " |");
+  lines.push("| 污损损失率 | " + so.loss_pct + "% |");
+  lines.push("| 可恢复电量/日 | " + e.recoverable_mwh_day + " MWh |");
+  lines.push("| 日恢复收益 | " + e.daily_revenue + " 元 |");
+  lines.push("| " + e.horizon_days + " 天累计收益 | " + e.horizon_revenue + " 元 |");
+  lines.push("| 清洗成本 | " + e.cleaning_cost + " 元 |");
+  lines.push("| 停机损失 | " + e.downtime_loss + " 元 |");
+  lines.push("| **净收益** | **" + e.net_gain + " 元** |");
+  lines.push("| 回本周期 | " + (e.payback_days ?? "--") + " 天 |", "");
+  lines.push("## 三、计算公式与参数来源", "");
+  Object.keys(m.formulas || {}).forEach(k => { if (k !== "param_sources") lines.push("- " + m.formulas[k]); });
+  lines.push("");
+  Object.keys((m.formulas || {}).param_sources || {}).forEach(k => lines.push("- " + k + "：" + m.formulas.param_sources[k]));
+  lines.push("", "## 四、Agent 判断依据", "");
+  (state.opinions || []).forEach(o => {
+    lines.push("### " + o.agent_name + "（" + stanceLabel(o.stance) + (o.confidence != null ? "，置信度 " + o.confidence : "") + "）");
+    lines.push("> " + o.message);
+    (o.evidence || []).forEach(v => lines.push("- " + v.metric + "：" + v.value + " " + v.unit + "（阈值 " + v.threshold + "，判定 " + v.verdict + "）"));
+    lines.push("");
+  });
+  lines.push("## 五、数据来源", "");
+  lines.push("- 辐照/降水/风速/云量：Open-Meteo Forecast（免费，无 Key）");
+  lines.push("- PM10/沙尘：Open-Meteo Air Quality（免费，无 Key）");
+  lines.push("- 理论发电量：PVGIS（欧盟 JRC，ERA5 2005-2023）");
+  lines.push("- 电价：新疆燃煤标杆上网电价政策值（约 0.25 元/kWh）");
+  lines.push("- 清洗成本与污损参数：公开招标区间与 IEA PVPS 文献，见 pv_config.json sources");
+  lines.push("", "> 收益为估算模型，执行前请结合现场检测复核。");
+  return lines.join("\n");
+}
+
+$("exportBtn").addEventListener("click", () => {
+  if (!state.metrics || !state.current) { toast("请先运行一次决策"); return; }
+  const md = buildReport(state.metrics, state.current);
+  const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+  const a = document.createElement("a");
+  const d = new Date();
+  const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + "_" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0");
+  a.href = URL.createObjectURL(blob);
+  a.download = "清洗决策报告_" + stamp + ".md";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("报告已导出");
+});
+
+document.querySelectorAll("[data-preset]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const p = btn.getAttribute("data-preset");
+    if (p === "sand") { $("days").value = 30; $("cost").value = 4000; }
+    else if (p === "normal") { $("days").value = 20; $("cost").value = 4000; }
+    else { $("days").value = 2; $("cost").value = 4000; }
+    $("scenario").value = "demo";
+    toast("已套用预设参数");
+  });
+});
+
+async function run() {
+  const payload = {
+    capacity_mw: num($("cap").value),
+    days_since_clean: Math.round(num($("days").value)),
+    price_per_kwh: num($("price").value),
+    cleaning_cost: num($("cost").value),
+    scenario: $("scenario").value
+  };
+  state.opinions = [];
+  state.metrics = null;
+  state.current = { ...payload, site: state.config ? state.config.site : {} };
+  $("timeline").innerHTML = "";
+  $("timelineHint").textContent = "协商中…";
+  $("exportBtn").disabled = true;
+  $("run").disabled = true;
+  $("run").textContent = "协商中…";
+  try {
+    const resp = await fetch("/api/decide/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail ? JSON.stringify(err.detail) : "HTTP " + resp.status);
+    }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const evt = JSON.parse(line);
+        handleEvent(evt);
+      }
+    }
+    if (state.metrics) {
+      saveHistory({
+        ts: new Date().toLocaleString("zh-CN", { hour12: false }),
+        params: state.current.capacity_mw + "MW / " + state.current.days_since_clean + "天 / " + state.current.price_per_kwh + "元",
+        action: state.metrics.decision.action,
+        net_gain: state.metrics.economics.net_gain,
+        window: state.metrics.decision.window,
+        cap: state.current.capacity_mw, days: state.current.days_since_clean,
+        price: state.current.price_per_kwh, cost: state.current.cleaning_cost,
+        scenario: state.current.scenario
+      });
+      $("exportBtn").disabled = false;
+      $("timelineHint").textContent = "已完成";
+      if (window.innerWidth <= 1024) $("verdictPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  } catch (err) {
+    $("timeline").innerHTML = '<div class="empty">请求失败：' + esc(err.message) + '</div>';
+    toast("请求失败，请检查参数或网络");
+  } finally {
+    $("run").disabled = false;
+    $("run").textContent = "运行决策";
+  }
+}
+
+function handleEvent(evt) {
+  switch (evt.type) {
+    case "session_start":
+      state.session = evt;
+      if (state.config) {
+        $("siteBadge").innerHTML = '<i class="dot"></i>' + esc(evt.site.name);
+      }
+      break;
+    case "data_loaded":
+      updateQuality(evt.data_quality || {});
+      break;
+    case "decision_snapshot":
+      state.metrics = evt.metrics;
+      renderKpis(evt.metrics);
+      renderVerdict(evt.metrics);
+      renderCharts(evt.metrics);
+      break;
+    case "mcp_ready":
+      addMcp("MCP 就绪 · " + (evt.server || "unknown"), (evt.tools || []).join(" / "), true);
+      break;
+    case "mcp_tool_call":
+      addMcp("工具调用 " + evt.tool, (evt.elapsed_ms || 0) + " ms", evt.ok !== false);
+      break;
+    case "mcp_error":
+      addMcp("MCP 不可用，已回退直连", evt.message || "", false);
+      break;
+    case "round_start":
+      addRound(evt.round);
+      break;
+    case "agent_input":
+      state.inputs[evt.agent] = evt.input;
+      break;
+    case "agent_speak":
+      state.opinions.push(evt);
+      renderAgent(evt);
+      break;
+    case "final":
+      state.metrics = evt.metrics;
+      renderKpis(evt.metrics);
+      renderVerdict(evt.metrics);
+      renderCharts(evt.metrics);
+      if (evt.summary) {
+        const s = document.createElement("div");
+        s.className = "empty";
+        s.style.marginTop = "9px";
+        s.textContent = evt.summary;
+        $("timeline").appendChild(s);
+      }
+      if (evt.forced) {
+        const w = document.createElement("div");
+        w.className = "empty";
+        w.style.color = "var(--gold)";
+        w.textContent = "未完全收敛：存在未消解分歧，请人工复核。";
+        $("timeline").appendChild(w);
+      }
+      break;
+  }
+}
+
+function addAgentStep(cls, title, detail, payload) {
+  const d = document.createElement("div");
+  d.className = "astep " + cls;
+  let html = '<div><span class="t">' + esc(title) + '</span>' + esc(detail || "") + '</div>';
+  if (payload) html += "<pre>" + esc(typeof payload === "string" ? payload : JSON.stringify(payload, null, 2)) + "</pre>";
+  d.innerHTML = html;
+  $("agentFeed").appendChild(d);
+  $("agentFeed").scrollTop = $("agentFeed").scrollHeight;
+}
+
+function handleAgentEvent(e) {
+  switch (e.type) {
+    case "agent_start":
+      addAgentStep("", "Agent 启动", "模式：" + (e.mode === "llm" ? "LLM 增强" : "规则引擎（未配置 LLM）"));
+      break;
+    case "agent_mcp_ready":
+      addAgentStep("result", "MCP 就绪", (e.tools || []).join(" / "));
+      break;
+    case "agent_mcp_error":
+      addAgentStep("error", "MCP 不可用", e.message || "");
+      break;
+    case "agent_decision":
+      addAgentStep("decision", "模型决策 · 第 " + e.step + " 步", "决定调用：" + (e.tools || []).join("、"), e.reasoning || null);
+      break;
+    case "agent_tool_call":
+      addAgentStep("tool", "工具调用 · " + e.tool, "参数如下", e.arguments);
+      break;
+    case "agent_tool_result":
+      addAgentStep(e.ok ? "result" : "error", "工具结果 · " + e.tool, e.ok ? "成功" : "失败", e.result);
+      break;
+    case "agent_answer":
+      addAgentStep("answer", "最终回答", e.answer || "", null);
+      break;
+    case "agent_error":
+      addAgentStep("error", "错误", e.message || "");
+      break;
+  }
+}
+
+async function runAgent() {
+  const q = ($("agentQ").value || "").trim();
+  if (!q) { toast("请输入问题"); return; }
+  $("agentFeed").innerHTML = "";
+  $("agentHint").textContent = "运行中…";
+  $("agentRun").disabled = true;
+  $("agentRun").textContent = "思考中…";
+  try {
+    const resp = await fetch("/api/agent/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: q,
+        scenario: $("scenario").value,
+        capacity_mw: num($("cap").value),
+        days_since_clean: Math.round(num($("days").value)),
+        price_per_kwh: num($("price").value),
+        cleaning_cost: num($("cost").value)
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.detail ? JSON.stringify(err.detail) : "HTTP " + resp.status);
+    }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        handleAgentEvent(JSON.parse(line));
+      }
+    }
+    $("agentHint").textContent = "已完成";
+  } catch (err) {
+    addAgentStep("error", "请求失败", err.message);
+    $("agentHint").textContent = "失败";
+  } finally {
+    $("agentRun").disabled = false;
+    $("agentRun").textContent = "问 Agent";
+  }
+}
+
+$("agentRun").addEventListener("click", runAgent);
+$("run").addEventListener("click", run);
+window.__esc = esc;
+</script>
+</body>
+</html>

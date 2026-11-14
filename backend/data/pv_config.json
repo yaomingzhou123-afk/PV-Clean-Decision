@@ -1,0 +1,48 @@
+{
+  "site": {
+    "name": "准东光伏电站",
+    "city": "新疆昌吉州准东经济技术开发区",
+    "lat": 44.01,
+    "lng": 87.31,
+    "capacity_mw": 20,
+    "days_since_clean": 20
+  },
+  "economics": {
+    "price_per_kwh": 0.25,
+    "cleaning_cost": 4000,
+    "efficiency": 0.82,
+    "horizon_days": 14,
+    "downtime_hours": 4,
+    "pvgis_loss_pct": 10,
+    "pvgis_angle": 35
+  },
+  "soiling": {
+    "base_rate_per_day": 0.004,
+    "pm10_ref": 80,
+    "pm10_factor": 0.00035,
+    "max_loss": 0.15,
+    "low_soiling_threshold_pct": 5
+  },
+  "safety": {
+    "wind_limit_ms": 12,
+    "rain_limit_mm": 1.0
+  },
+  "negotiation": {
+    "partial_min_ratio": 0.3,
+    "partial_max_ratio": 0.7
+  },
+  "sources": {
+    "price_per_kwh": "新疆燃煤标杆上网电价政策值，约 0.25 元/kWh，演示取 0.25",
+    "cleaning_cost": "参考公开招标成交价区间，待以目标电站实际合同价替换",
+    "efficiency": "降级公式使用；PVGIS 模式下系统损失由 pvgis_loss_pct 建模，避免与污损模型重复计入",
+    "pvgis_loss_pct": "PVGIS 系统损失参数，仅含线缆/逆变器/温度等，不含污损",
+    "base_rate_per_day": "IEA PVPS Task 13 / NREL 干旱区污损研究区间 0.1-0.5%/天，取保守值 0.4%/天",
+    "pm10_factor": "PM10 超基准部分对日污损速率的线性增量，依据公开研究趋势标定，待实测修正",
+    "wind_limit_ms": "清洗作业安全风速阈值，参考高空作业常见限值",
+    "rain_limit_mm": "清洗后 48 小时降水阈值，避免清洗后立即再次污染",
+    "low_soiling_threshold_pct": "显著污损判定阈值：损失率低于此值视为不值得清洗",
+    "partial_min_ratio": "分区清洗比例下限：污损趋零时仍清洗的最小方阵占比",
+    "partial_max_ratio": "分区清洗比例上限：污损达上限时清洗的最大方阵占比，比例与污损程度线性正相关",
+    "confidence": "Agent 置信度由指标与阈值偏差比确定性推导：0.6（压线）至 0.99（偏离一倍以上），无随机成分"
+  }
+}
