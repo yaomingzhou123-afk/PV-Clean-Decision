@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 
 import httpx
 
+from utils.units import mj_to_kwh, valid_irradiance_kwh, valid_rain_mm, valid_wind_ms
+
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 PVGIS_URL = "https://re.jrc.ec.europa.eu/api/v5_3/PVcalc"
@@ -38,26 +40,26 @@ def now_iso() -> str:
 
 
 def sanitize_days(raw_days: list) -> list | None:
+    """校验原始天数据（输入单位：irradiance=kWh/m²、wind=m/s、rain=mm）。
+    irradiance/wind/rain 任一缺失或越界即剔除该天，不参与正式计算；
+    cloud 仅用于展示，缺失归 0。全部无效返回 None 触发降级。"""
     days = []
     for d in raw_days or []:
-        try:
-            irr = d.get("irradiance")
-            if irr is None or not isinstance(irr, (int, float)) or irr < 0 or irr > 12:
-                continue
-            rain = d.get("rain")
-            wind = d.get("wind")
-            cloud = d.get("cloud")
-            days.append(
-                {
-                    "date": str(d.get("date", "")),
-                    "irradiance": round(float(irr), 2),
-                    "rain": round(float(rain), 1) if isinstance(rain, (int, float)) and rain >= 0 else 0.0,
-                    "wind": round(float(wind), 1) if isinstance(wind, (int, float)) and wind >= 0 else 0.0,
-                    "cloud": round(float(cloud), 0) if isinstance(cloud, (int, float)) and 0 <= cloud <= 100 else 0.0,
-                }
-            )
-        except (TypeError, AttributeError):
+        irr = valid_irradiance_kwh(d.get("irradiance"))
+        wind = valid_wind_ms(d.get("wind"))
+        rain = valid_rain_mm(d.get("rain"))
+        if irr is None or wind is None or rain is None:
             continue
+        cloud = d.get("cloud")
+        days.append(
+            {
+                "date": str(d.get("date", "")),
+                "irradiance": irr,
+                "rain": rain,
+                "wind": wind,
+                "cloud": round(float(cloud), 0) if isinstance(cloud, (int, float)) and 0 <= cloud <= 100 else 0.0,
+            }
+        )
     return days or None
 
 
@@ -83,6 +85,29 @@ async def _get(client: httpx.AsyncClient, url: str, params: dict, timeout: float
     return None
 
 
+def _daily_to_raw_days(daily: dict) -> list:
+    """Open-Meteo daily 响应 → 原始天列表。
+    输入单位：shortwave_radiation_sum = MJ/m²；wind_speed_10m_max = m/s（请求已声明 wind_speed_unit=ms）。
+    输出单位：irradiance = kWh/m²（本函数完成全项目唯一一次 MJ→kWh 转换）；wind/rain/cloud 原样传递待校验。"""
+    time_list = daily.get("time") or []
+    radiation = daily.get("shortwave_radiation_sum") or []
+    rain = daily.get("precipitation_sum") or []
+    wind = daily.get("wind_speed_10m_max") or []
+    cloud = daily.get("cloud_cover_mean") or []
+    raw = []
+    for i, day in enumerate(time_list):
+        raw.append(
+            {
+                "date": day,
+                "irradiance": mj_to_kwh(radiation[i]) if i < len(radiation) else None,
+                "rain": rain[i] if i < len(rain) else None,
+                "wind": wind[i] if i < len(wind) else None,
+                "cloud": cloud[i] if i < len(cloud) else None,
+            }
+        )
+    return raw
+
+
 async def fetch_forecast(lat: float, lng: float) -> dict:
     params = {
         "latitude": lat,
@@ -90,24 +115,13 @@ async def fetch_forecast(lat: float, lng: float) -> dict:
         "daily": "shortwave_radiation_sum,precipitation_sum,wind_speed_10m_max,cloud_cover_mean",
         "forecast_days": 3,
         "timezone": "Asia/Shanghai",
+        "wind_speed_unit": "ms",
     }
     async with httpx.AsyncClient(headers={"User-Agent": "pv-agent"}) as client:
         data = await _get(client, FORECAST_URL, params)
     if not data or "daily" not in data:
         return {**FALLBACK_FORECAST, "fetched_at": now_iso(), "quality": "fallback"}
-    daily = data["daily"]
-    time_list = daily.get("time") or []
-    raw_days = []
-    for i, day in enumerate(time_list):
-        raw_days.append(
-            {
-                "date": day,
-                "irradiance": (daily.get("shortwave_radiation_sum") or [None] * len(time_list))[i],
-                "rain": (daily.get("precipitation_sum") or [None] * len(time_list))[i],
-                "wind": (daily.get("wind_speed_10m_max") or [None] * len(time_list))[i],
-                "cloud": (daily.get("cloud_cover_mean") or [None] * len(time_list))[i],
-            }
-        )
+    raw_days = _daily_to_raw_days(data["daily"])
     days = sanitize_days(raw_days)
     if not days:
         return {**FALLBACK_FORECAST, "fetched_at": now_iso(), "quality": "fallback"}
@@ -133,7 +147,7 @@ async def fetch_air(lat: float, lng: float) -> dict:
         return {**FALLBACK_AIR, "fetched_at": now_iso(), "quality": "fallback"}
     return {
         "pm10": round(sum(pm10) / len(pm10), 1),
-        "dust": round(sum(dust) / len(dust), 1) if dust else FALLBACK_AIR["dust"],
+        "dust": round(sum(dust) / len(dust), 1) if dust else None,
         "source": "open-meteo-air",
         "fetched_at": now_iso(),
         "quality": "live",

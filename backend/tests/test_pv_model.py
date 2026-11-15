@@ -93,6 +93,18 @@ def test_defer_decision_on_rain():
     assert m["decision"]["weather_block"] is True
 
 
+def test_wind_boundary_11_9_ms_allows_clean():
+    m = compute_metrics(CONFIG, make_context(wind=11.9))
+    assert m["decision"]["weather_block"] is False
+    assert m["decision"]["action"] == "clean"
+
+
+def test_wind_boundary_12_ms_defers():
+    m = compute_metrics(CONFIG, make_context(wind=12.0))
+    assert m["decision"]["weather_block"] is True
+    assert m["decision"]["action"] == "defer"
+
+
 def test_hold_decision_when_net_negative():
     cfg = json.loads(json.dumps(CONFIG))
     cfg["economics"]["cleaning_cost"] = 10_000_000
