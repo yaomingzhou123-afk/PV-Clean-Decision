@@ -95,6 +95,30 @@
   .kpi .value small { font-size: 12px; font-weight: 500; color: var(--text-2); margin-left: 3px; }
   .kpi .foot { font-size: 11px; color: var(--text-3); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+  .status-lights { display: flex; gap: 8px; flex-wrap: wrap; }
+  .light {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--text-2);
+    border: 1px solid var(--line); border-radius: 999px;
+    background: rgba(20,33,54,.6); padding: 4px 10px; white-space: nowrap;
+  }
+  .light b { color: var(--text-3); font-weight: 500; }
+  .light .lamp { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+  .light .ltxt { color: var(--text); font-weight: 600; }
+  .light.good .lamp { background: var(--green); box-shadow: 0 0 6px rgba(47,214,165,.65); }
+  .light.warn .lamp { background: var(--gold); box-shadow: 0 0 6px rgba(245,181,68,.65); }
+  .light.bad .lamp { background: var(--red); box-shadow: 0 0 6px rgba(239,107,107,.65); }
+  .light.info .lamp { background: var(--blue); box-shadow: 0 0 6px rgba(78,168,255,.65); }
+  .tabs { display: flex; gap: 6px; margin: 12px 0 10px; }
+  .tab {
+    padding: 7px 18px; font-size: 13px; cursor: pointer;
+    color: var(--text-2); background: transparent;
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  .tab.active { color: #201502; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+  .hint-line { font-size: 11px; color: var(--text-3); line-height: 1.6; margin-top: 5px; }
+  .site-name { font-size: 11.5px; color: var(--text-3); margin-left: 4px; }
+
   .workspace {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr) 380px;
@@ -324,13 +348,23 @@
 <div class="wrap">
   <header class="topbar">
     <div class="brand">疆光<span>·</span>清洗决策驾驶舱</div>
-    <span class="badge site" id="siteBadge"><i class="dot"></i>站点加载中</span>
-    <span class="badge" id="qualityBadge"><i class="dot"></i>数据待加载</span>
-    <span class="badge mode" id="modeBadge"><i class="dot"></i>模式检测中</span>
+    <span class="site-name" id="siteName"></span>
+    <div class="status-lights">
+      <span class="light" id="lightData"><i class="lamp"></i><b>数据</b><span class="ltxt">待加载</span></span>
+      <span class="light" id="lightModel"><i class="lamp"></i><b>模型</b><span class="ltxt">检测中</span></span>
+      <span class="light" id="lightDecision"><i class="lamp"></i><b>决策</b><span class="ltxt">待生成</span></span>
+    </div>
     <div class="top-actions">
       <button class="ghost" id="exportBtn" disabled>导出报告</button>
     </div>
   </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="decision">清洗决策</button>
+    <button class="tab" data-view="agent">Agent 问答</button>
+  </nav>
+
+  <div id="viewDecision">
 
   <section class="kpis">
     <div class="kpi b">
@@ -372,6 +406,7 @@
           <option value="demo">演示样例（离线可用）</option>
           <option value="live">实时公开数据（Open-Meteo / PVGIS）</option>
         </select>
+        <div class="hint-line">演示样例使用内置数据，现场演示建议选它；实时模式调用公开接口，受网络影响。</div>
         <div class="presets">
           <button data-preset="sand">沙尘后</button>
           <button data-preset="normal">常规</button>
@@ -421,6 +456,10 @@
     </div>
   </section>
 
+  </div>
+
+  <div id="viewAgent" hidden>
+
   <section class="panel agent-panel">
     <h2>Agent 工具调用（Function Calling） <span class="hint" id="agentHint">模型自主决定调用哪些工具</span></h2>
     <div class="pad">
@@ -433,6 +472,8 @@
       </div>
     </div>
   </section>
+
+  </div>
 
   <section class="panel history">
     <h2>历史决策记录 <span class="hint">本地保存，点击可回放</span></h2>
@@ -462,8 +503,8 @@ function stanceLabel(s) { return { support: "支持", object: "反对", propose:
 function shortName(a) { return { weather: "气象", soiling: "污损", economics: "收益", ops: "调度", arbiter: "仲裁", critic: "主席" }[a] || "A"; }
 
 fetch("/api/health").then(r => r.json()).then(d => {
-  $("modeBadge").innerHTML = '<i class="dot"></i>' + (d.mode === "llm" ? "LLM 增强模式" : "规则决策模式");
-}).catch(() => { $("modeBadge").innerHTML = '<i class="dot"></i>离线'; });
+  setLight("lightModel", d.mode === "llm" ? "good" : "", d.mode === "llm" ? "LLM 增强" : "规则引擎");
+}).catch(() => { setLight("lightModel", "bad", "离线"); });
 
 fetch("/api/config").then(r => r.json()).then(c => {
   state.config = c;
@@ -474,7 +515,8 @@ fetch("/api/config").then(r => r.json()).then(c => {
   $("siteInfo").innerHTML =
     "站点 <b>" + esc(c.site.name) + "</b><br/>坐标 <b>" + esc(c.site.lat) + ", " + esc(c.site.lng) + "</b><br/>" +
     esc(c.site.city) + "<br/>系统效率 <b>" + esc(c.economics.efficiency) + "</b> · 评估周期 <b>" + esc(c.economics.horizon_days) + " 天</b>";
-  $("siteBadge").innerHTML = '<i class="dot"></i>' + esc(c.site.name);
+  const siteEl = $("siteName");
+  if (siteEl) siteEl.textContent = c.site.name;
   loadHistory();
 }).catch(() => { $("siteInfo").textContent = "配置加载失败"; });
 
@@ -489,10 +531,25 @@ function qualityBadge(dq) {
   };
   return map[q] || { cls: "info", text: q };
 }
+function setLight(id, cls, text) {
+  const el = $(id);
+  if (!el) return;
+  el.className = "light " + (cls || "");
+  const t = el.querySelector(".ltxt");
+  if (t) t.textContent = text;
+}
+
+function switchView(view) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
+  const dEl = $("viewDecision"), aEl = $("viewAgent");
+  if (dEl) dEl.hidden = view !== "decision";
+  if (aEl) aEl.hidden = view !== "agent";
+}
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => switchView(t.dataset.view)));
+
 function updateQuality(dq) {
   const b = qualityBadge(dq);
-  $("qualityBadge").className = "badge " + b.cls;
-  $("qualityBadge").innerHTML = '<i class="dot"></i>' + esc(b.text);
+  setLight("lightData", b.cls, b.text);
   const srcCls = (s) => s === "live" ? "ok" : (s === "demo" ? "demo" : "bad");
   $("dataFoot").innerHTML =
     "气象 <span class='" + srcCls(dq.forecast_quality) + "'>" + esc(dq.forecast_source || "--") + "</span> · " +
@@ -518,6 +575,7 @@ function renderVerdict(m) {
   const d = m.decision, e = m.economics;
   const scope = e.scope === "partial" ? '<span class="scope-tag">分区 ' + esc(e.scope_ratio) + '%</span>' : '<span class="scope-tag">全站</span>';
   $("verdict").className = "verdict " + (d.action || "hold");
+  setLight("lightDecision", d.action === "clean" ? "good" : (d.action === "defer" ? "warn" : ""), actionLabel(d.action) + (d.window ? " · " + d.window : ""));
   $("verdict").innerHTML =
     '<div class="k">决策结论' + scope + '</div>' +
     '<div class="v">' + esc(actionLabel(d.action)) + '</div>' +
@@ -824,7 +882,8 @@ function handleEvent(evt) {
     case "session_start":
       state.session = evt;
       if (state.config) {
-        $("siteBadge").innerHTML = '<i class="dot"></i>' + esc(evt.site.name);
+        const siteEl2 = $("siteName");
+        if (siteEl2) siteEl2.textContent = evt.site.name;
       }
       break;
     case "data_loaded":
