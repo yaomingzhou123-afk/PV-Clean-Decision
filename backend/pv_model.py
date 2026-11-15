@@ -153,6 +153,7 @@ def compute_metrics(config: dict, context: dict) -> dict:
             "air_quality": context["air"].get("quality"),
             "overall_quality": context.get("quality"),
             "fetched_at": context.get("fetched_at"),
+            "data_sources": context.get("data_source_records", []),
             "note": "辐照、降水、风速来自公开气象接口；收益为估算模型，参数可在配置中调整。",
         },
         "formulas": {

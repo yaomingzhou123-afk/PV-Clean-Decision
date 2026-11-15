@@ -6,6 +6,7 @@ from pathlib import Path
 
 import agents
 import llm
+from data_sources.health import update_health as ds_update_health
 from mcp_client import MCPClient
 from weather import fetch_context, demo_context
 from pv_model import compute_metrics
@@ -89,6 +90,14 @@ async def stream_decision(overrides: dict | None = None):
                     "mode": config.get("scenario", "demo"),
                 },
             )
+            for r in context.get("data_source_records", []):
+                ds_update_health(
+                    r["source"],
+                    status="ok" if r.get("status") in ("ok", "cached") else "error",
+                    error=r.get("error_message"),
+                    data_kind=r.get("data_kind"),
+                    is_cached=r.get("is_cached", False),
+                )
             yield envelope(
                 "mcp_tool_call",
                 tool="get_site_data",

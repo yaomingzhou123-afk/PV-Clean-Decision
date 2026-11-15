@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 import llm
 from agent_loop import stream_agent
+from data_sources.health import get_health
 from orchestrator import load_config, stream_decision
 
 ROOT = BASE_DIR.parent
@@ -58,6 +59,11 @@ def health():
 @app.get("/api/config")
 def config():
     return load_config({})
+
+
+@app.get("/api/data-sources/health")
+def data_sources_health():
+    return {"sources": get_health()}
 
 
 @app.post("/api/decide/stream")

@@ -125,6 +125,13 @@
   .tab.active { color: #201502; background: var(--gold); border-color: var(--gold); font-weight: 700; }
   .hint-line { font-size: 11px; color: var(--text-3); line-height: 1.6; margin-top: 5px; }
   .site-name { font-size: 11.5px; color: var(--text-3); margin-left: 4px; }
+  .ds-list { margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 7px; display: flex; flex-direction: column; gap: 4px; }
+  .ds-row { display: flex; gap: 8px; align-items: baseline; font-size: 10.5px; color: var(--text-3); flex-wrap: wrap; }
+  .ds-row .ok { color: var(--green); }
+  .ds-row .bad { color: var(--red); }
+  .ds-src { color: var(--text-2); font-weight: 600; min-width: 120px; }
+  .ds-time { margin-left: auto; color: var(--text-3); }
+  .ds-err { font-size: 10px; color: var(--red); padding-left: 4px; }
 
   .workspace {
     display: grid;
@@ -561,10 +568,31 @@ function updateQuality(dq) {
   const b = qualityBadge(dq);
   setLight("lightData", b.cls, b.text);
   const srcCls = (s) => s === "live" ? "ok" : (s === "demo" ? "demo" : "bad");
-  $("dataFoot").innerHTML =
+  let html =
     "气象 <span class='" + srcCls(dq.forecast_quality) + "'>" + esc(dq.forecast_source || "--") + "</span> · " +
     "空气质量 <span class='" + srcCls(dq.air_quality) + "'>" + esc(dq.air_source || "--") + "</span><br/>" +
     "拉取时间 " + esc(dq.fetched_at || "--") + "<br/>" + esc(dq.note || "");
+  const records = dq.data_sources || [];
+  if (records.length) {
+    const kindLabel = { forecast: "预报", historical: "历史", user_input: "输入", simulation: "模拟" };
+    html += '<div class="ds-list">';
+    records.forEach(r => {
+      const stCls = (r.status === "ok" || r.status === "cached") ? "ok" : "bad";
+      const stLabel = r.status === "cached" ? "缓存" : (r.status === "ok" ? "成功" : "失败");
+      const flags = [];
+      if (r.is_cached) flags.push("缓存");
+      if (r.is_simulated) flags.push("模拟");
+      html += '<div class="ds-row">' +
+        '<span class="ds-src">' + esc(r.source) + '</span>' +
+        '<span>' + esc(kindLabel[r.data_kind] || r.data_kind) + '</span>' +
+        '<span class="' + stCls + '">' + esc(stLabel + (flags.length ? " · " + flags.join(" · ") : "")) + '</span>' +
+        '<span class="ds-time">' + esc(r.valid_time || "") + '</span>' +
+        '</div>';
+      if (r.error_message) html += '<div class="ds-err">' + esc(r.error_message) + '</div>';
+    });
+    html += '</div>';
+  }
+  $("dataFoot").innerHTML = html;
 }
 
 function renderKpis(m) {

@@ -45,3 +45,11 @@ def valid_rain_mm(value, lo: float = 0.0, hi: float = 500.0) -> float | None:
     if v is None or v < lo or v > hi:
         return None
     return round(v, 1)
+
+
+def valid_temp_c(value, lo: float = -60.0, hi: float = 60.0) -> float | None:
+    """气温合理范围校验（单位 °C）。不合法返回 None。温度仅用于展示，不参与决策计算。"""
+    v = _to_float(value)
+    if v is None or v < lo or v > hi:
+        return None
+    return round(v, 1)
