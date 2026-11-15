@@ -35,16 +35,21 @@ cd backend && python -m pytest tests -q  # 31 项测试应全绿
 | 4.6 MCP 工具层（评分细则点名项） | ✅ 完成并验收（JSON-RPC over stdio，3 工具，主链路真实调用，38 项测试，2026-11-14） |
 | 4.7 Function Calling | ✅ 完成并实测通过（MaaS deepseek-v4.1-flash-1017：模型自主调用 search_knowledge，自生成参数，回答引用 KB-A02/A06；47 项测试） |
 | 4.8 业务规则修正：最小清洗间隔 14 天、删除预设按钮 | ✅ 完成（2 天→暂不清洗、14 天→清洗；49 项测试，2026-11-15） |
-| 5 API/Agent 测试、结构化日志、Windows 说明 | ⏸️ 下一步 |
-| 6 沙箱部署（实名已通过）、五件套打包 | ⬜ |
+| V3.0-1 全面审查 | ✅ PROJECT_AUDIT.md：发现 4 个 P0 单位缺陷 + 十级问题清单 |
+| V3.0-2 单位修复 | ✅ 辐照 MJ→kWh 唯一转换、风速源头 m/s、缺失剔除、dust 修复；66 项测试 |
+| V3.0-3 数据源层 | ✅ data_sources/ 统一接入（DataRecord 元数据、四源、健康接口、MCP 健康同步）；78 项测试 |
+| V3.0-4 决策模型升级 | ✅ 污损三层模型、恢复效率、自然清洁折减、成本分项、四种决策（insufficient_data）、敏感性分析 12 场景；98 项测试 |
+| ⚠️ 比赛材料（最高优先） | ⏸️ 答辩十问 → PPT 12 页 → 3 分钟视频 → 码道截图 |
+| 5 结构化日志、API 测试（技术侧，材料之后） | ⬜ |
+| 6 沙箱部署、五件套打包 | ⬜ |
 
-## 阶段 5 具体范围（下一步）
+## 明日计划（材料优先，技术暂停）
 
-1. 新增 `backend/tests/test_api.py`：FastAPI TestClient 覆盖 /api/health、/api/config、非法参数 422、流式事件序列
-2. 结构化 JSON 日志：数据拉取、降级、决策完成三个关键节点
-3. Windows 启动说明（PowerShell + venv 等效命令）
-4. README 补充前端结构与导出说明
-涉及文件：`backend/main.py`、`backend/tests/`、`readme/README.md`
+1. 答辩十问 + 标准答案（防"AI 写的代码"质疑）
+2. PPT 12 页大纲（对应评分表：创新30/技术25/码道25/工程12/交付8）
+3. 3 分钟视频逐句讲稿（注意：demo 净收益已变为 39,478 元）
+4. 码道截图 4 类（25 分的关键证据，只有团队能做）
+5. 技术侧遗留（材料做完再说）：结构化日志、API 测试、问答链路健康同步
 
 ## 已确认的设计决策（勿改）
 
@@ -68,8 +73,10 @@ cd backend && python -m pytest tests -q  # 31 项测试应全绿
 
 ## 关键事实速查
 
-- PVGIS 11 月 E_d=3.79 kWh/kWp（ERA5 2005–2023），接口 4.2s
-- demo 场景净收益 41,975 元（20MW/20 天/0.25 元/4000 元）
-- 缺陷修复记录 9 条：见 codearts_proof/04_调试与Bug修复记录.md
-- 阶段三验收数据：agent_input 4 条全覆盖、confidence 5/5、仲裁比例 42% 随污损动态推导、defer 独立评审 conf 0.67
+- 测试基线：**98 项全绿**（`python3 -m pytest backend/tests -q`，项目根目录执行）
+- demo 净收益：**39,478 元**（recovery_efficiency=0.95 生效；旧值 41,975 已作废，答辩材料务必用新值）
+- 四种决策：clean / defer / hold / **insufficient_data**（live 降级时不基于模拟数据给真实决策）
+- 数据源：Open-Meteo 预报+空气质量、PVGIS 历史、NASA POWER 可选（默认关）；全部带 DataRecord 元数据
+- PVGIS 11 月 E_d=3.79 kWh/kWp（ERA5 2005–2023）
 - 官方提交规范：zip 内五件套 ppt/ project/ video/ codearts_proof/ readme/
+- 提交截止 11-20；GitHub 远程 HEAD 8d7d617 与本地一致，代码安全
