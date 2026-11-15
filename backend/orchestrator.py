@@ -138,6 +138,24 @@ async def stream_decision(overrides: dict | None = None):
     yield envelope("decision_snapshot", metrics=metrics)
     await asyncio.sleep(0.4)
 
+    if metrics["decision"]["action"] == "insufficient_data":
+        yield envelope("round_start", round=1)
+        yield agents.speak(
+            "critic",
+            "object",
+            f"数据不足，无法启动协商：{metrics['decision']['reason']}",
+            refs=metrics["decision"].get("data_insufficient", []),
+            confidence=0.95,
+        )
+        yield envelope(
+            "final",
+            metrics=metrics,
+            forced=False,
+            mode=llm.mode(),
+            summary="数据不足，暂时无法判断；请检查数据源状态后重试。",
+        )
+        return
+
     opinions: list[dict] = []
     yield envelope("round_start", round=1)
     for fn, agent_id in (

@@ -515,7 +515,7 @@ function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 1800);
 }
-function actionLabel(a) { return { clean: "建议清洗", defer: "建议延后", hold: "暂不清洗" }[a] || a; }
+function actionLabel(a) { return { clean: "建议清洗", defer: "建议延后", hold: "暂不清洗", insufficient_data: "数据不足" }[a] || a; }
 function stanceLabel(s) { return { support: "支持", object: "反对", propose: "提议" }[s] || s; }
 function shortName(a) { return { weather: "气象", soiling: "污损", economics: "收益", ops: "调度", arbiter: "仲裁", critic: "主席" }[a] || "A"; }
 
@@ -613,7 +613,7 @@ function renderVerdict(m) {
   const d = m.decision, e = m.economics;
   const scope = e.scope === "partial" ? '<span class="scope-tag">分区 ' + esc(e.scope_ratio) + '%</span>' : '<span class="scope-tag">全站</span>';
   $("verdict").className = "verdict " + (d.action || "hold");
-  setLight("lightDecision", d.action === "clean" ? "good" : (d.action === "defer" ? "warn" : ""), actionLabel(d.action) + (d.window ? " · " + d.window : ""));
+  setLight("lightDecision", d.action === "clean" ? "good" : (d.action === "defer" ? "warn" : (d.action === "insufficient_data" ? "bad" : "")), actionLabel(d.action) + (d.window ? " · " + d.window : ""));
   $("verdict").innerHTML =
     '<div class="k">决策结论' + scope + '</div>' +
     '<div class="v">' + esc(actionLabel(d.action)) + '</div>' +

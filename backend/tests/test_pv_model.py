@@ -49,11 +49,13 @@ def test_negative_price_raises():
         validate_config(cfg)
 
 
-def test_empty_days_raises():
+def test_empty_days_returns_insufficient_data():
     ctx = make_context()
     ctx["forecast"]["days"] = []
-    with pytest.raises(ValueError, match="气象数据为空"):
-        compute_metrics(CONFIG, ctx)
+    m = compute_metrics(CONFIG, ctx)
+    assert m["decision"]["action"] == "insufficient_data"
+    assert m["decision"]["data_insufficient"]
+    assert m["economics"]["net_gain"] is None
 
 
 def test_interval_blocks_clean_when_too_recent():
