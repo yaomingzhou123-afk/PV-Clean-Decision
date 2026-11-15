@@ -33,7 +33,7 @@ cd backend && python -m pytest tests -q  # 31 项测试应全绿
 | 4 前端：XSS 修复、仪表盘、SVG 趋势图、localStorage 历史、md 报告导出、移动端 | ✅ 完成并验收（三档视口 0 横向滚动、0 报错、导出可用，2026-11-14） |
 | 4.5 RAG 知识库（评分细则点名项） | ✅ 完成并验收（37 条/6 类，BM25 检索，5 Agent 引用全覆盖，31 项测试，2026-11-14） |
 | 4.6 MCP 工具层（评分细则点名项） | ✅ 完成并验收（JSON-RPC over stdio，3 工具，主链路真实调用，38 项测试，2026-11-14） |
-| 4.7 Function Calling | ✅ 完成（LLM 工具循环 4 步上限 + 前端面板 + 自检脚本，47 项测试；真实 Key 正例待现场验证） |
+| 4.7 Function Calling | ✅ 完成并实测通过（MaaS deepseek-v4.1-flash-1017：模型自主调用 search_knowledge，自生成参数，回答引用 KB-A02/A06；47 项测试） |
 | 5 API/Agent 测试、结构化日志、Windows 说明 | ⏸️ 下一步 |
 | 6 沙箱部署（实名已通过）、五件套打包 | ⬜ |
 

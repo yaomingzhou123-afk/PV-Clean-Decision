@@ -1,5 +1,9 @@
 import os
 
+from env_loader import load_env
+
+load_env()
+
 import httpx
 
 BASE_URL = os.getenv("LLM_BASE_URL", "").rstrip("/")

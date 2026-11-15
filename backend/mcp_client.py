@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -9,6 +10,7 @@ SERVER = BASE_DIR / "mcp_server.py"
 
 class MCPClient:
     def __init__(self, timeout: float = 30.0):
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
         self.proc = subprocess.Popen(
             [sys.executable, str(SERVER)],
             stdin=subprocess.PIPE,
@@ -16,6 +18,8 @@ class MCPClient:
             stderr=subprocess.DEVNULL,
             text=True,
             encoding="utf-8",
+            errors="replace",
+            env=env,
             bufsize=1,
         )
         self.timeout = timeout
