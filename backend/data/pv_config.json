@@ -21,7 +21,8 @@
     "pm10_ref": 80,
     "pm10_factor": 0.00035,
     "max_loss": 0.15,
-    "low_soiling_threshold_pct": 5
+    "low_soiling_threshold_pct": 5,
+    "min_clean_interval_days": 14
   },
   "safety": {
     "wind_limit_ms": 12,
@@ -41,6 +42,7 @@
     "wind_limit_ms": "清洗作业安全风速阈值，参考高空作业常见限值",
     "rain_limit_mm": "清洗后 48 小时降水阈值，避免清洗后立即再次污染",
     "low_soiling_threshold_pct": "显著污损判定阈值：损失率低于此值视为不值得清洗",
+    "min_clean_interval_days": "行业最小清洗间隔 14 天：过于频繁清洗会缩短组件寿命、增加水资源与人工成本，行业实践通常以 2 周为下限",
     "partial_min_ratio": "分区清洗比例下限：污损趋零时仍清洗的最小方阵占比",
     "partial_max_ratio": "分区清洗比例上限：污损达上限时清洗的最大方阵占比，比例与污损程度线性正相关",
     "confidence": "Agent 置信度由指标与阈值偏差比确定性推导：0.6（压线）至 0.99（偏离一倍以上），无随机成分"

@@ -148,6 +148,17 @@ async def stream_decision(overrides: dict | None = None):
     await asyncio.sleep(0.35)
 
     forced = False
+    if not passed and metrics["decision"].get("interval_block"):
+        passed = True
+        yield agents.speak(
+            "critic",
+            "support",
+            f"距上次清洗不足最小间隔（{metrics['decision']['min_clean_interval_days']} 天），设备与成本约束优先，维持暂不清洗；建议间隔满足后再评估。",
+            refs=[f"最小间隔 {metrics['decision']['min_clean_interval_days']} 天"],
+            confidence=0.9,
+        )
+        await asyncio.sleep(0.3)
+
     if not passed:
         blockers = {o["agent"] for o in opinions if o["stance"] == "object"}
         if "weather" in blockers:

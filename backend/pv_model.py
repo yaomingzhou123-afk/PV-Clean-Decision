@@ -82,17 +82,22 @@ def compute_metrics(config: dict, context: dict) -> dict:
     best = max(days, key=lambda d: d["irradiance"] - d["wind"] * 0.05 - d["rain"] * 2)
 
     weather_block = rain_next48 >= safety["rain_limit_mm"] or wind_max >= safety["wind_limit_ms"]
+    min_interval = config["soiling"].get("min_clean_interval_days", 14)
+    interval_block = site["days_since_clean"] < min_interval
     economics_ok = net_gain > 0
 
     if weather_block:
         action = "defer"
         reason = "未来 48 小时有降水或大风，清洗后易再次污染或存在高空作业风险"
+    elif interval_block:
+        action = "hold"
+        reason = f"距上次清洗仅 {site['days_since_clean']} 天，低于行业最小清洗间隔 {min_interval} 天，重复清洗会增加成本并提高组件划伤风险"
     elif not economics_ok:
         action = "hold"
         reason = "未来收益不足以覆盖清洗与停机成本，建议继续监测"
     else:
         action = "clean"
-        reason = "天气窗口满足且净收益为正"
+        reason = "天气窗口满足、满足最小清洗间隔且净收益为正"
 
     sources = config.get("sources") or {}
     return {
@@ -137,6 +142,8 @@ def compute_metrics(config: dict, context: dict) -> dict:
             "reason": reason,
             "window": best["date"] if action == "clean" else None,
             "weather_block": weather_block,
+            "interval_block": interval_block,
+            "min_clean_interval_days": min_interval,
             "economics_ok": economics_ok,
         },
         "data_quality": {

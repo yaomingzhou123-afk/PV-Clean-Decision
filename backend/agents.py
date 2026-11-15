@@ -130,6 +130,21 @@ def _soiling_evidence(m: dict, config: dict) -> tuple[list, float, bool]:
 def soiling_opinion(m: dict, config: dict) -> dict:
     s = m["soiling"]
     evidence, margin, low = _soiling_evidence(m, config)
+    min_interval = config["soiling"].get("min_clean_interval_days", 14)
+    if s["days"] < min_interval:
+        gap = abs(s["days"] - min_interval) / max(min_interval, 1)
+        return speak(
+            "soiling",
+            "object",
+            f"距上次清洗仅 {s['days']} 天，低于行业最小清洗间隔 {min_interval} 天；当前估算损失 {s['loss_pct']}%。频繁清洗会增加人工与水资源成本、提高组件划伤风险，不建议此时再次清洗。",
+            refs=[f"间隔 {s['days']} 天 < {min_interval} 天"],
+            patch={"interval_short": True},
+            confidence=_confidence(gap),
+            evidence=[
+                _ev("days_since_clean", s["days"], min_interval, "天", "below", gap)
+            ]
+            + evidence,
+        )
     if low:
         return speak(
             "soiling",

@@ -56,6 +56,22 @@ def test_empty_days_raises():
         compute_metrics(CONFIG, ctx)
 
 
+def test_interval_blocks_clean_when_too_recent():
+    cfg = json.loads(json.dumps(CONFIG))
+    cfg["site"]["days_since_clean"] = 2
+    m = compute_metrics(cfg, make_context())
+    assert m["decision"]["action"] == "hold"
+    assert m["decision"]["interval_block"] is True
+    assert m["decision"]["min_clean_interval_days"] == 14
+
+
+def test_interval_allows_clean_at_boundary():
+    cfg = json.loads(json.dumps(CONFIG))
+    cfg["site"]["days_since_clean"] = 14
+    m = compute_metrics(cfg, make_context())
+    assert m["decision"]["interval_block"] is False
+
+
 def test_clean_decision_with_formula_source():
     m = compute_metrics(CONFIG, make_context())
     assert m["decision"]["action"] == "clean"

@@ -156,13 +156,6 @@
   .mcp .tag-mcp { color: var(--blue); font-weight: 600; }
   .mcp .ok { color: var(--green); }
   .mcp .err { color: var(--red); }
-  .presets { display: flex; gap: 6px; margin-top: 10px; }
-  .presets button {
-    flex: 1; font-size: 11px; padding: 6px 4px; cursor: pointer;
-    background: #0a1424; color: var(--text-2);
-    border: 1px solid var(--line); border-radius: var(--r-8);
-  }
-  .presets button:hover { color: var(--text); border-color: var(--gold); }
   button.run {
     width: 100%; margin-top: 12px; padding: 10px; border: 0;
     border-radius: var(--r-10); cursor: pointer;
@@ -397,6 +390,7 @@
         <input id="cap" type="number" min="0.5" max="5000" step="0.5" value="20" />
         <label>距上次清洗（天）</label>
         <input id="days" type="number" min="0" max="365" step="1" value="20" />
+        <div class="hint-line">小于 14 天时系统会建议暂不清洗（行业最小清洗间隔）</div>
         <label>上网电价（元/kWh）</label>
         <input id="price" type="number" min="0.05" max="2" step="0.01" value="0.25" />
         <label>清洗成本（元/次）</label>
@@ -407,11 +401,6 @@
           <option value="live">实时公开数据（Open-Meteo / PVGIS）</option>
         </select>
         <div class="hint-line">演示样例使用内置数据，现场演示建议选它；实时模式调用公开接口，受网络影响。</div>
-        <div class="presets">
-          <button data-preset="sand">沙尘后</button>
-          <button data-preset="normal">常规</button>
-          <button data-preset="low">低污损</button>
-        </div>
         <button class="run" id="run">运行决策</button>
         <div class="site" id="siteInfo">加载站点信息…</div>
       </div>
@@ -799,17 +788,6 @@ $("exportBtn").addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(a.href);
   toast("报告已导出");
-});
-
-document.querySelectorAll("[data-preset]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const p = btn.getAttribute("data-preset");
-    if (p === "sand") { $("days").value = 30; $("cost").value = 4000; }
-    else if (p === "normal") { $("days").value = 20; $("cost").value = 4000; }
-    else { $("days").value = 2; $("cost").value = 4000; }
-    $("scenario").value = "demo";
-    toast("已套用预设参数");
-  });
 });
 
 async function run() {
