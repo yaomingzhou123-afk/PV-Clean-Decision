@@ -1,9 +1,10 @@
 import json
 import logging
 import os
-import select
+import queue
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,14 +34,29 @@ class MCPClient:
         self._next_id = 0
         self._closed = False
         self.server_info = {}
+        self._lines: queue.Queue = queue.Queue()
+        self._reader = threading.Thread(target=self._read_loop, daemon=True)
+        self._reader.start()
+
+    def _read_loop(self) -> None:
+        """后台读取 stdout，写入队列；EOF 时写入 None 作为结束标记。
+
+        使用队列+线程而不是 select，因为 select 在 Windows 上只能用于 socket，
+        对子进程管道会抛 WinError 10038。该实现跨平台且超时有效。
+        """
+        try:
+            for line in self.proc.stdout:
+                self._lines.put(line)
+        finally:
+            self._lines.put(None)
 
     def _readline_timeout(self) -> str:
         """带超时读取一行响应；超时抛 TimeoutError，连接关闭抛 RuntimeError。"""
-        deadline = select.select([self.proc.stdout], [], [], self.timeout)
-        if not deadline[0]:
-            raise TimeoutError(f"MCP 响应超时（{self.timeout}s）")
-        line = self.proc.stdout.readline()
-        if not line:
+        try:
+            line = self._lines.get(timeout=self.timeout)
+        except queue.Empty:
+            raise TimeoutError(f"MCP 响应超时（{self.timeout}s）") from None
+        if line is None:
             raise RuntimeError("MCP server closed the connection")
         return line
 
