@@ -363,6 +363,89 @@
     .history table { min-width: 560px; }
     .top-actions button { padding: 6px 9px; }
   }
+
+  .sim-banner { margin-bottom: 12px; border-left: 3px solid var(--gold); }
+  .sim-banner .pad { display: flex; flex-direction: column; gap: 7px; }
+  .sim-banner-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sim-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sim-presets button {
+    background: #0a1424; color: var(--text-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 5px 10px; font-size: 11px; cursor: pointer;
+  }
+  .sim-presets button:hover { color: var(--gold); border-color: rgba(245,181,68,.5); }
+  .sim-layout { display: grid; grid-template-columns: 410px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .sim-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 9px; }
+  .sim-field { border: 1px solid var(--line-soft); border-radius: var(--r-8); background: #0a1424; padding: 7px 8px; min-width: 0; }
+  .sim-field.invalid { border-color: var(--red); box-shadow: 0 0 0 2px rgba(239,107,107,.1); }
+  .sim-field .lbl { display: flex; justify-content: space-between; gap: 4px; font-size: 10.5px; color: var(--text-2); }
+  .sim-field .lbl b { color: var(--text); font-weight: 600; }
+  .sim-field .unit { color: var(--text-3); font-weight: 400; white-space: nowrap; }
+  .sim-field input {
+    width: 100%; margin-top: 4px; background: #081120; color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px;
+    font-size: 12px; font-family: var(--font-mono); outline: none;
+  }
+  .sim-field input:focus { border-color: var(--gold); }
+  .sim-field .meta { font-size: 9.5px; color: var(--text-3); line-height: 1.45; margin-top: 4px; }
+  .sim-field .meta .range { color: var(--text-2); }
+  .sim-scenario-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+  .sim-scenario-row select {
+    flex: 1; min-width: 130px; background: #081120; color: var(--text);
+    border: 1px solid var(--line); border-radius: 7px; padding: 6px 7px; font-size: 11.5px;
+  }
+  .sim-scenario-row button { padding: 6px 8px; font-size: 11px; }
+  .sim-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+  .sim-kpi { border: 1px solid var(--line); border-radius: var(--r-8); background: #0a1424; padding: 8px 9px; min-width: 0; }
+  .sim-kpi .l { font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sim-kpi .v { font-family: var(--font-mono); font-size: 17px; font-weight: 600; margin-top: 3px; line-height: 1.2; }
+  .sim-kpi .v small { font-size: 10px; color: var(--text-2); font-weight: 400; margin-left: 2px; }
+  .sim-kpi .s { font-size: 9.5px; color: var(--text-3); margin-top: 3px; line-height: 1.4; }
+  .sim-kpi .v.good { color: var(--green); }
+  .sim-kpi .v.bad { color: var(--red); }
+  .sim-badge {
+    display: inline-block; font-size: 10.5px; color: var(--gold);
+    border: 1px solid rgba(245,181,68,.35); background: rgba(245,181,68,.06);
+    border-radius: 999px; padding: 3px 8px; margin-bottom: 8px;
+  }
+  .sim-warning {
+    font-size: 11px; color: var(--gold); border-left: 2px solid var(--gold);
+    background: rgba(245,181,68,.05); padding: 5px 8px; margin: 5px 0; line-height: 1.55;
+  }
+  .sim-decision { border: 1px solid var(--line); border-radius: var(--r-10); background: #0a1424; padding: 10px 12px; margin: 10px 0; }
+  .sim-decision .a { font-size: 19px; font-weight: 700; }
+  .sim-decision .a.clean { color: var(--green); }
+  .sim-decision .a.defer { color: var(--gold); }
+  .sim-decision .a.hold { color: var(--text-2); }
+  .sim-decision .a.insufficient_data { color: var(--red); }
+  .sim-decision .r { font-size: 11px; color: var(--text-2); line-height: 1.6; margin-top: 4px; }
+  .sim-table-wrap { overflow-x: auto; margin-top: 5px; }
+  .sim-strategy-table { width: 100%; border-collapse: collapse; font-size: 10.5px; min-width: 720px; }
+  .sim-strategy-table th { text-align: left; color: var(--text-3); font-weight: 500; padding: 6px 7px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .sim-strategy-table td { padding: 6px 7px; border-bottom: 1px solid var(--line-soft); color: var(--text-2); vertical-align: top; }
+  .sim-strategy-table tr:last-child td { border-bottom: 0; }
+  .sim-strategy-table tr.best td { background: rgba(47,214,165,.055); }
+  .sim-strategy-table .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+  .sim-strategy-table .neg { color: var(--red); }
+  .sim-strategy-table .pos { color: var(--green); }
+  .sim-impact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .sim-impact-chart { border: 1px solid var(--line); border-radius: var(--r-8); background: #0a1424; padding: 8px 9px; min-width: 0; }
+  .sim-impact-chart h4 { margin: 0 0 5px; font-size: 11px; color: var(--text-2); font-weight: 600; }
+  .sim-impact-chart h4 small { color: var(--text-3); font-weight: 400; }
+  .sim-impact-chart svg { width: 100%; height: auto; display: block; }
+  .sim-note { font-size: 10px; color: var(--text-3); line-height: 1.75; margin-top: 7px; }
+  .sim-note b { color: var(--text-2); }
+  .sim-note .tag { color: var(--gold); }
+  @media (max-width: 1280px) { .sim-layout { grid-template-columns: 340px minmax(0, 1fr); } }
+  @media (max-width: 1024px) {
+    .sim-layout { grid-template-columns: minmax(0, 1fr); }
+    .sim-kpis { grid-template-columns: repeat(2, 1fr); }
+    .sim-impact-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 768px) {
+    .sim-form { grid-template-columns: 1fr; }
+    .sim-kpis { grid-template-columns: 1fr 1fr; }
+    .sim-banner-title { font-size: 13px; }
+  }
 </style>
 </head>
 <body>
@@ -383,6 +466,7 @@
   <nav class="tabs">
     <button class="tab active" data-view="decision">清洗决策</button>
     <button class="tab" data-view="agent">Agent 问答</button>
+    <button class="tab" data-view="sim">模拟实验室</button>
   </nav>
 
   <div id="viewDecision">
@@ -492,6 +576,55 @@
 
   </div>
 
+  <div id="viewSim" hidden>
+
+  <section class="panel sim-banner">
+    <div class="pad">
+      <div class="sim-banner-title">
+        清洗决策模拟实验室
+        <span class="badge warn"><span class="dot"></span>模拟计算结果</span>
+        <span class="badge info"><span class="dot"></span>示例假设可切换</span>
+      </div>
+      <div class="hint-line">
+        改变参数，观察污损、发电损失、清洗成本、收益、回款周期和风险如何变化。所有结果均来自模拟计算，不代表真实电站运行数据，也不是真实回测。
+      </div>
+      <div class="sim-presets" id="simPresets"></div>
+    </div>
+  </section>
+
+  <div class="sim-layout">
+    <aside class="panel params">
+      <h2>模拟参数 <span class="hint">单位 / 范围 / 说明</span></h2>
+      <div class="pad">
+        <div class="sim-scenario-row">
+          <select id="simScenarioSelect"></select>
+          <button class="ghost" id="simLoadScenario">加载</button>
+          <button class="ghost" id="simSaveScenario">保存当前</button>
+          <button class="ghost" id="simReset">恢复默认</button>
+        </div>
+        <div id="simForm" class="sim-form"><div class="empty">参数加载中…</div></div>
+        <button class="run" id="simRun">重新计算</button>
+        <div class="hint-line" id="simFormHint">修改任一参数后自动重算；“污损损失手动假设”留空时使用模型估算。</div>
+      </div>
+    </aside>
+
+    <section class="panel">
+      <h2>模拟结果 <span class="hint" id="simResultHint">等待计算</span></h2>
+      <div class="pad">
+        <div class="sim-badge">模拟计算结果 · 非真实电站数据 · 非真实回测</div>
+        <div id="simSummary" class="empty">加载参数后自动计算…</div>
+        <div id="simKpis" class="sim-kpis"></div>
+        <div id="simDecision"></div>
+        <div id="simWarnings"></div>
+        <div id="simStrategies"></div>
+        <div id="simImpact"></div>
+        <div id="simNotes"></div>
+      </div>
+    </section>
+  </div>
+
+  </div>
+
   <section class="panel history">
     <h2>历史决策记录 <span class="hint">本地保存，点击可回放</span></h2>
     <div id="historyBody" class="empty" style="padding:12px">暂无记录，运行一次决策后自动保存。</div>
@@ -500,7 +633,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const state = { config: null, session: null, metrics: null, opinions: [], inputs: {}, history: [], current: null };
+const state = { config: null, session: null, metrics: null, opinions: [], inputs: {}, history: [], current: null, sim: { specs: [], defaults: null, scenarios: [], custom: [], values: {}, result: null, timer: null, reqId: 0, scenarioName: "自定义模拟场景（模拟）" } };
 
 function $(id) { return document.getElementById(id); }
 function esc(v) {
@@ -558,9 +691,10 @@ function setLight(id, cls, text) {
 
 function switchView(view) {
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
-  const dEl = $("viewDecision"), aEl = $("viewAgent");
+  const dEl = $("viewDecision"), aEl = $("viewAgent"), sEl = $("viewSim");
   if (dEl) dEl.hidden = view !== "decision";
   if (aEl) aEl.hidden = view !== "agent";
+  if (sEl) sEl.hidden = view !== "sim";
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => switchView(t.dataset.view)));
 
@@ -1055,6 +1189,377 @@ async function runAgent() {
 
 $("agentRun").addEventListener("click", runAgent);
 $("run").addEventListener("click", run);
+
+/* ---------- 模拟实验室 ---------- */
+function simSpecByKey(key) {
+  return (state.sim.specs || []).find(s => s.key === key);
+}
+
+function simInputValue(v) {
+  return v == null ? "" : String(v);
+}
+
+function buildSimForm(values) {
+  const form = $("simForm");
+  form.innerHTML = state.sim.specs.map(spec => {
+    const range = spec.min + "–" + spec.max + " " + spec.unit;
+    const placeholder = spec.allow_empty ? "留空 = 模型估算" : "请输入";
+    return '<div class="sim-field" data-field="' + esc(spec.key) + '">' +
+      '<div class="lbl"><b>' + esc(spec.label) + '</b><span class="unit">' + esc(spec.unit) + '</span></div>' +
+      '<input id="sim_' + esc(spec.key) + '" data-key="' + esc(spec.key) + '" type="number" ' +
+      'min="' + esc(spec.min) + '" max="' + esc(spec.max) + '" step="' + esc(spec.step) + '" ' +
+      'value="' + esc(simInputValue(values[spec.key])) + '" placeholder="' + esc(placeholder) + '" />' +
+      '<div class="meta"><span class="range">范围 ' + esc(range) + '</span><br/>' +
+      esc(spec.description) + '<br/>' + esc(spec.basis) + '</div></div>';
+  }).join("");
+  form.querySelectorAll("input[data-key]").forEach(el => {
+    el.addEventListener("input", () => {
+      const field = el.closest(".sim-field");
+      if (field) field.classList.remove("invalid");
+      scheduleSimulation();
+    });
+    el.addEventListener("change", scheduleSimulation);
+  });
+}
+
+function readSimValues() {
+  const values = {};
+  for (const spec of state.sim.specs) {
+    const el = $("sim_" + spec.key);
+    if (!el) continue;
+    const raw = (el.value || "").trim();
+    const field = el.closest(".sim-field");
+    if (raw === "") {
+      if (spec.allow_empty) {
+        values[spec.key] = null;
+        continue;
+      }
+      if (field) field.classList.add("invalid");
+      $("simResultHint").textContent = "参数无效，结果未更新";
+      toast(spec.label + " 不能为空");
+      return null;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < spec.min || value > spec.max) {
+      if (field) field.classList.add("invalid");
+      $("simResultHint").textContent = "参数无效，结果未更新";
+      toast(spec.label + " 必须在 " + spec.min + "–" + spec.max + " " + spec.unit + " 之间");
+      return null;
+    }
+    values[spec.key] = value;
+  }
+  return values;
+}
+
+function scheduleSimulation() {
+  clearTimeout(state.sim.timer);
+  state.sim.timer = setTimeout(runSimulation, 350);
+}
+
+function simErrorText(body) {
+  if (!body) return "请求失败";
+  if (Array.isArray(body.detail)) {
+    return body.detail.map(d => {
+      const loc = (d.loc || []).filter(x => x !== "body").join(".");
+      return (loc ? loc + "：" : "") + (d.msg || "参数无效");
+    }).join("；");
+  }
+  return typeof body.detail === "string" ? body.detail : "请求失败";
+}
+
+function simulatePayload() {
+  const values = readSimValues();
+  if (!values) return null;
+  return Object.assign({}, values, { scenario_name: state.sim.scenarioName });
+}
+
+async function runSimulation() {
+  if (!state.sim.specs.length) return;
+  const payload = simulatePayload();
+  if (!payload) return;
+  const reqId = ++state.sim.reqId;
+  $("simResultHint").textContent = "计算中…";
+  $("simRun").disabled = true;
+  try {
+    const resp = await fetch("/api/simulation/calculate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      throw new Error(simErrorText(body));
+    }
+    const data = await resp.json();
+    if (reqId !== state.sim.reqId) return;
+    state.sim.result = data;
+    renderSim(data);
+    $("simResultHint").textContent = "已更新 · " + (data.generated_at || "");
+  } catch (err) {
+    if (reqId !== state.sim.reqId) return;
+    $("simSummary").innerHTML = '<div class="sim-warning">模拟计算失败：' + esc(err.message) + '</div>';
+    $("simResultHint").textContent = "计算失败";
+    toast("模拟计算失败，请检查参数");
+  } finally {
+    if (reqId === state.sim.reqId) $("simRun").disabled = false;
+  }
+}
+
+function simKpi(label, value, sub, cls) {
+  return '<div class="sim-kpi"><div class="l">' + esc(label) + '</div>' +
+    '<div class="v ' + (cls || "") + '">' + value + '</div>' +
+    '<div class="s">' + esc(sub) + '</div></div>';
+}
+
+function simNum(v, unit) {
+  return v == null ? '<span class="empty">--</span>' : fmt(v) + '<small>' + esc(unit) + '</small>';
+}
+
+function simNum1(v, unit) {
+  return v == null ? '<span class="empty">--</span>' : fmt1(v) + '<small>' + esc(unit) + '</small>';
+}
+
+function renderSim(r) {
+  const s = r.summary || {};
+  const sr = s.soiling_risk || {};
+  const en = s.energy_loss || {};
+  const cost = s.cost || {};
+  const rev = s.revenue || {};
+  const weather = s.weather || {};
+  const decision = s.decision || {};
+  const action = decision.action || "hold";
+  const overrideText = sr.override_applied ? "（手动假设生效）" : "";
+  const netClass = num(s.net_gain) > 0 ? "good" : (num(s.net_gain) < 0 ? "bad" : "");
+  const paybackText = (s.payback_days == null || num(s.net_gain) <= 0) ? "--" : simNum1(s.payback_days, " 天");
+  const paybackSub = num(s.net_gain) <= 0 ? "净收益为负时不计算回本" : "单次清洗口径";
+
+  $("simSummary").innerHTML = '<div><b>场景：</b>' + esc(r.scenario_name) +
+    ' <span class="chip kb">模拟</span></div>' +
+    '<div class="hint-line">' + esc(r.disclaimer) + '</div>';
+
+  $("simKpis").innerHTML =
+    simKpi("污损风险", simNum1(sr.loss_pct, "%"), "模型估算 " + fmt1(sr.model_loss_pct) + "%" + overrideText) +
+    simKpi("预计发电损失", simNum1(en.recoverable_mwh_day, " MWh/日"), "日增量收益 " + fmt(en.daily_revenue) + " 元") +
+    simKpi("清洗总成本", simNum(cost.cleaning_total, " 元"), "含停机损失 " + fmt(cost.downtime_loss) + " 元") +
+    simKpi("预计清洗收益", simNum(rev.horizon_revenue, " 元"), "单次清洗测算 · " + esc(rev.horizon_days) + " 天") +
+    simKpi("清洗净收益", simNum(s.net_gain, " 元"), "收益 − 成本 − 停机损失", netClass) +
+    simKpi("投资回收期", paybackText, paybackSub) +
+    simKpi("天气风险", weather.blocked ? "有阻塞" : "无阻塞", "未来降雨 " + fmt1(weather.rain_next48) + " mm / 风速 " + fmt1(weather.wind_max) + " m/s", weather.blocked ? "bad" : "good") +
+    simKpi("推荐决策", esc(decision.label || "暂不清洗"), "执行窗口 " + esc(decision.window || "暂不执行"), action === "clean" ? "good" : (action === "defer" ? "bad" : ""));
+
+  $("simDecision").innerHTML = '<div class="sim-decision">' +
+    '<div class="a ' + esc(action) + '">' + esc(decision.label || "暂不清洗") + '</div>' +
+    '<div class="r">' + esc(decision.reason || "") +
+    (decision.window ? '；执行窗口 <b>' + esc(decision.window) + '</b>' : '') +
+    '</div></div>';
+
+  $("simWarnings").innerHTML = (r.warnings || []).length
+    ? '<div class="sim-warning">' + r.warnings.map(esc).join('<br/>') + '</div>'
+    : '<div class="sim-note">当前输入未触发额外风险提示；仍需按现场条件复核。</div>';
+
+  renderSimStrategies(r.strategies || []);
+  renderSimImpact(r.impact || []);
+  renderSimNotes(r);
+}
+
+function renderSimStrategies(strategies) {
+  if (!strategies.length) {
+    $("simStrategies").innerHTML = "";
+    return;
+  }
+  let best = null;
+  strategies.forEach(st => {
+    if (st.net_gain != null && (best == null || num(st.net_gain) > best)) best = num(st.net_gain);
+  });
+  const rows = strategies.map(st => {
+    const cls = st.net_gain != null && best != null && num(st.net_gain) === best ? "best" : "";
+    const netCls = num(st.net_gain) < 0 ? "neg" : "pos";
+    return '<tr class="' + cls + '">' +
+      '<td><b>' + esc(st.name) + '</b><br/><span class="hint-line">' + esc(st.reason) + '</span></td>' +
+      '<td class="num">' + esc(st.clean_count) + ' 次</td>' +
+      '<td class="num">' + fmt(st.revenue) + ' 元</td>' +
+      '<td class="num">' + fmt(st.cost) + ' 元</td>' +
+      '<td class="num ' + netCls + '">' + fmt(st.net_gain) + ' 元</td>' +
+      '<td class="num">' + (st.payback_days == null || num(st.net_gain) <= 0 ? "--" : fmt1(st.payback_days) + " 天") + '</td>' +
+      '<td>' + esc(st.safety_risk) + '</td></tr>';
+  }).join("");
+  $("simStrategies").innerHTML =
+    '<div class="sim-badge">三策略对照 · 同一输入 / 同一评价周期</div>' +
+    '<div class="sim-table-wrap"><table class="sim-strategy-table"><thead><tr>' +
+    '<th>策略</th><th>清洗次数</th><th>预计发电收益</th><th>清洗成本</th><th>净收益</th><th>回本</th><th>安全风险</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="sim-note">策略表按评价周期逐日模拟，可能发生多次清洗；上方 KPI 是“只清洗一次”的当前时点测算，两者口径不同，不能直接相加或当作同一件事。没有真实历史数据，不能称为真实回测。</div>';
+}
+
+function simImpactChart(item) {
+  const pts = (item.points || []).filter(p => p.net_gain != null && Number.isFinite(Number(p.net_gain)));
+  if (!pts.length) {
+    return '<div class="sim-impact-chart"><h4>' + esc(item.label) + '</h4><div class="empty">无数据</div></div>';
+  }
+  const W = 520, H = 150, padL = 42, padB = 26, padT = 14;
+  const vals = pts.map(p => Number(p.net_gain));
+  const min = Math.min(0, ...vals);
+  let max = Math.max(0, ...vals);
+  if (max - min < 1) max = min + 1;
+  const span = max - min;
+  const x = i => padL + (W - padL - 18) * (pts.length > 1 ? i / (pts.length - 1) : 0);
+  const y = v => (H - padB) - ((v - min) / span) * (H - padB - padT);
+  let svg = '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - 10) + '" y2="' + (H - padB) + '" stroke="#1e304c"/>' +
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (H - padB) + '" stroke="#1e304c"/>';
+  if (min < 0 && max > 0) {
+    svg += '<line x1="' + padL + '" y1="' + y(0) + '" x2="' + (W - 10) + '" y2="' + y(0) + '" stroke="#5f7391" stroke-dasharray="3 3" opacity="0.6"/>';
+  }
+  svg += '<polyline fill="none" stroke="#f5b544" stroke-width="2" points="' +
+    pts.map((p, i) => x(i).toFixed(1) + "," + y(Number(p.net_gain)).toFixed(1)).join(" ") + '"/>';
+  pts.forEach((p, i) => {
+    const color = p.action === "clean" ? "#2fd6a5" : (p.action === "defer" ? "#f5b544" : "#ef6b6b");
+    svg += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(Number(p.net_gain)).toFixed(1) + '" r="3.2" fill="' + color + '">' +
+      '<title>' + esc(item.label + "=" + p.value + " " + item.unit + "，净收益 " + fmt(p.net_gain) + " 元，" + actionLabel(p.action)) + '</title></circle>';
+    svg += '<text x="' + x(i).toFixed(1) + '" y="' + (H - padB + 15) + '" fill="#5f7391" font-size="9" text-anchor="middle">' + esc(p.value) + '</text>';
+  });
+  svg += '<text x="' + (padL - 4) + '" y="' + (padT + 4) + '" fill="#5f7391" font-size="9" text-anchor="end">' + esc(fmt(max)) + '</text>';
+  svg += '<text x="' + (padL - 4) + '" y="' + (H - padB) + '" fill="#5f7391" font-size="9" text-anchor="end">' + esc(fmt(min)) + '</text>';
+  return '<div class="sim-impact-chart"><h4>' + esc(item.label) +
+    ' <small>→ 净收益（元） / ' + esc(item.unit) + '</small></h4>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + svg + '</svg></div>';
+}
+
+function renderSimImpact(impact) {
+  const order = ["pm10", "price_per_kwh", "cleaning_total", "dry_days"];
+  const items = order.map(k => impact.find(x => x.key === k)).filter(Boolean);
+  $("simImpact").innerHTML = '<div class="sim-badge">主要参数影响 · 由实际重算结果生成</div>' +
+    '<div class="sim-impact-grid">' + items.map(simImpactChart).join("") + '</div>' +
+    '<div class="sim-note">曲线为单因素扫描：仅改变横轴参数，其余参数保持当前输入。绿点=建议清洗，黄点=延后，红点=暂不清洗。</div>';
+}
+
+function renderSimNotes(r) {
+  const formulas = Object.keys(r.formulas || {}).map(k => r.formulas[k]);
+  const assumptions = r.assumptions || [];
+  const limitations = r.limitations || [];
+  const th = r.thresholds || {};
+  $("simNotes").innerHTML = '<div class="sim-note">' +
+    '<b>计算口径：</b><br/>' + formulas.map(esc).join('<br/>') +
+    '<br/><b>假设：</b><br/>' + assumptions.map(esc).join('<br/>') +
+    '<br/><b>局限：</b><br/>' + limitations.map(esc).join('<br/>') +
+    '<br/><b>采用的项目阈值：</b>风速 ' + fmt1(th.wind_limit_ms) + ' m/s；降雨 ' + fmt1(th.rain_limit_mm) +
+    ' mm；最小间隔 ' + esc(th.min_clean_interval_days) + ' 天；模型污损上限 ' + fmt1(th.max_loss_pct) +
+    '%。这些阈值来自项目配置，不是行业统一标准。' +
+    '<br/><span class="tag">' + esc(r.scenario_note || "") + '</span></div>';
+}
+
+function loadSimCustom() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("pv_sim_scenarios_v1") || "[]");
+    state.sim.custom = Array.isArray(raw) ? raw.filter(x => x && x.name && x.params) : [];
+  } catch (e) {
+    state.sim.custom = [];
+  }
+}
+
+function renderSimScenarioSelect() {
+  let html = '<option value="">选择模拟场景…</option>';
+  (state.sim.scenarios || []).forEach(sc => {
+    html += '<option value="preset:' + esc(sc.id) + '">' + esc(sc.name) + '（示例假设）</option>';
+  });
+  (state.sim.custom || []).forEach((sc, i) => {
+    html += '<option value="custom:' + i + '">' + esc(sc.name) + '</option>';
+  });
+  $("simScenarioSelect").innerHTML = html;
+}
+
+function renderSimPresets(scenarios) {
+  $("simPresets").innerHTML = (scenarios || []).map(sc =>
+    '<button type="button" data-preset="' + esc(sc.id) + '">' + esc(sc.name) + '（示例假设）</button>'
+  ).join("");
+  document.querySelectorAll("#simPresets [data-preset]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const sc = (state.sim.scenarios || []).find(x => x.id === btn.getAttribute("data-preset"));
+      if (!sc) return;
+      applySimParams(sc.params, sc.name + "（示例假设）");
+      runSimulation();
+    });
+  });
+}
+
+function applySimParams(params, name) {
+  for (const spec of state.sim.specs) {
+    const el = $("sim_" + spec.key);
+    if (!el) continue;
+    el.value = simInputValue(params[spec.key]);
+    const field = el.closest(".sim-field");
+    if (field) field.classList.remove("invalid");
+  }
+  state.sim.scenarioName = name || "自定义模拟场景（模拟）";
+}
+
+async function simLoadDefaults() {
+  try {
+    const resp = await fetch("/api/simulation/defaults");
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const data = await resp.json();
+    state.sim.specs = data.specs || [];
+    state.sim.defaults = data.params || {};
+    state.sim.scenarios = data.scenarios || [];
+    state.sim.values = Object.assign({}, data.params || {});
+    loadSimCustom();
+    buildSimForm(state.sim.defaults);
+    renderSimPresets(state.sim.scenarios);
+    renderSimScenarioSelect();
+    state.sim.scenarioName = "自定义模拟场景（模拟）";
+    await runSimulation();
+  } catch (err) {
+    $("simForm").innerHTML = '<div class="sim-warning">模拟实验室加载失败：' + esc(err.message) + '</div>';
+    $("simSummary").innerHTML = '<div class="sim-warning">无法加载模拟参数；请确认后端已启动。</div>';
+    $("simResultHint").textContent = "加载失败";
+  }
+}
+
+$("simRun").addEventListener("click", () => {
+  clearTimeout(state.sim.timer);
+  runSimulation();
+});
+
+$("simReset").addEventListener("click", () => {
+  applySimParams(state.sim.defaults || {}, "自定义模拟场景（模拟）");
+  runSimulation();
+  toast("已恢复模拟默认参数");
+});
+
+$("simLoadScenario").addEventListener("click", () => {
+  const value = $("simScenarioSelect").value;
+  if (!value) { toast("请先选择一个模拟场景"); return; }
+  if (value.indexOf("preset:") === 0) {
+    const id = value.slice(7);
+    const sc = (state.sim.scenarios || []).find(x => x.id === id);
+    if (!sc) return;
+    applySimParams(sc.params, sc.name + "（示例假设）");
+    runSimulation();
+    toast("已加载示例场景（模拟）");
+  } else if (value.indexOf("custom:") === 0) {
+    const item = state.sim.custom[Number(value.slice(7))];
+    if (!item) return;
+    applySimParams(item.params, item.name);
+    runSimulation();
+    toast("已加载已保存的模拟场景");
+  }
+});
+
+$("simSaveScenario").addEventListener("click", () => {
+  const values = readSimValues();
+  if (!values) return;
+  const raw = prompt("给当前模拟场景命名（保存后会标注“模拟”）", "高粉尘场景");
+  if (raw == null) return;
+  const name = "模拟 · " + String(raw).trim().slice(0, 40);
+  if (!String(raw).trim()) { toast("场景名称不能为空"); return; }
+  state.sim.custom.unshift({ name: name, params: values });
+  state.sim.custom = state.sim.custom.slice(0, 20);
+  try { localStorage.setItem("pv_sim_scenarios_v1", JSON.stringify(state.sim.custom)); } catch (e) {}
+  state.sim.scenarioName = name;
+  renderSimScenarioSelect();
+  toast("模拟场景已保存到本地");
+});
+
+simLoadDefaults();
 window.__esc = esc;
 </script>
 </body>

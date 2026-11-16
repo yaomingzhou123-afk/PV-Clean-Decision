@@ -30,6 +30,12 @@ def validate_config(config: dict) -> None:
             errors.append(f"{part} 不能为负")
     if soiling.get("base_rate_per_day", -1) < 0:
         errors.append("base_rate_per_day 不能为负")
+    if soiling.get("pm10_factor", 0) < 0:
+        errors.append("pm10_factor 不能为负")
+    if soiling.get("pm25_factor", 0) < 0:
+        errors.append("pm25_factor 不能为负")
+    if soiling.get("pm25_ref", 0) < 0:
+        errors.append("pm25_ref 不能为负")
     if not (0 < soiling.get("max_loss", 0) <= 1):
         errors.append("max_loss 必须在 (0, 1] 内")
     if soiling.get("tilt_factor", 1.0) <= 0:
@@ -73,28 +79,44 @@ def assess_environment(config: dict, context: dict) -> dict:
     }
 
 
-def estimate_soiling(config: dict, context: dict) -> dict:
+def estimate_soiling(config: dict, context: dict, soiling_override_ratio: float | None = None) -> dict:
     """污损估算层 + 证据层。
     本项目无污损传感器，输出为模型估算（method=model_estimate），不得当作实测污损率展示。
-    证据层输出主要影响因素、数据完整性、参数依据与模型限制。"""
+    soiling_override_ratio 仅用于模拟实验室的手动假设，使用后 method=user_assumption，
+    并保留 model_loss_pct 供对照，避免把假设值伪装成模型结果。"""
     soiling_cfg = config["soiling"]
     site = config["site"]
     air = context.get("air") or {}
     env = assess_environment(config, context)
     days = site["days_since_clean"]
     pm10 = air.get("pm10", soiling_cfg["pm10_ref"])
-    daily_rate = soiling_cfg["base_rate_per_day"] + max(0.0, pm10 - soiling_cfg["pm10_ref"]) * soiling_cfg["pm10_factor"]
+    pm25 = air.get("pm2_5")
+    pm25_ref = soiling_cfg.get("pm25_ref", 35)
+    pm25_extra = 0.0
+    if pm25 is not None and pm25 > pm25_ref:
+        pm25_extra = (pm25 - pm25_ref) * soiling_cfg.get("pm25_factor", 0.0)
+    daily_rate = (
+        soiling_cfg["base_rate_per_day"]
+        + max(0.0, pm10 - soiling_cfg["pm10_ref"]) * soiling_cfg["pm10_factor"]
+        + pm25_extra
+    )
     tilt = soiling_cfg.get("tilt_factor", 1.0)
-    loss = min(soiling_cfg["max_loss"], daily_rate * days * tilt)
+    model_loss = min(soiling_cfg["max_loss"], daily_rate * days * tilt)
+    override = None if soiling_override_ratio is None else min(soiling_cfg["max_loss"], max(0.0, soiling_override_ratio))
+    loss = model_loss if override is None else override
 
     drivers = []
     if pm10 is not None and pm10 > soiling_cfg["pm10_ref"]:
         drivers.append(f"PM10={pm10} μg/m³，高于基准 {soiling_cfg['pm10_ref']}")
+    if pm25 is not None and pm25 > pm25_ref and soiling_cfg.get("pm25_factor", 0.0) > 0:
+        drivers.append(f"PM2.5={pm25} μg/m³，高于演示基准 {pm25_ref}（系数为演示假设）")
     if env["dust"] is not None and env["dust"] > 50:
         drivers.append(f"沙尘浓度 {env['dust']} μg/m³")
     drivers.append(f"距上次清洗 {days} 天（期间无有效清洁降雨记录，以运行天数代理）")
     if env["natural_clean_expected"]:
         drivers.append(f"预报期内有 ≥{soiling_cfg.get('rain_clean_threshold_mm', 2.0)}mm 降雨，存在自然清洁预期")
+    if override is not None:
+        drivers.append(f"用户手动假设污损损失 {round(override * 100, 1)}%（模型估算为 {round(model_loss * 100, 1)}%）")
 
     limitations = [
         "无污损传感器实测数据，本值为模型估算，非实测污损率",
@@ -103,6 +125,8 @@ def estimate_soiling(config: dict, context: dict) -> dict:
     ]
     if tilt == 1.0:
         limitations.append("倾角修正因子=1.0（未启用）：缺乏实测依据，默认不修正")
+    if override is not None:
+        limitations.append("当前污损值为用户手动假设，仅用于模拟实验室对照，不是模型或实测结果")
 
     return {
         "daily_rate_pct": round(daily_rate * 100, 3),
@@ -111,7 +135,10 @@ def estimate_soiling(config: dict, context: dict) -> dict:
         "dust": air.get("dust"),
         "loss_pct": round(loss * 100, 1),
         "loss_ratio": round(loss, 4),
-        "method": "model_estimate",
+        "model_loss_pct": round(model_loss * 100, 1),
+        "model_loss_ratio": round(model_loss, 4),
+        "override_applied": override is not None,
+        "method": "user_assumption" if override is not None else "model_estimate",
         "drivers": drivers,
         "data_completeness": env["data_completeness"],
         "natural_clean_expected": env["natural_clean_expected"],
@@ -155,7 +182,7 @@ def _decide(weather_block: bool, interval_block: bool, economics_ok: bool, site:
     return "clean", "天气窗口满足、满足最小清洗间隔且净收益为正"
 
 
-def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net_gain) -> dict:
+def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net_gain, soiling_override_ratio: float | None = None) -> dict:
     """单因素确定性敏感性分析：每次仅改变一个参数重算净收益与决策。
     本方法为确定性扰动，非概率模拟，无分布假设，不输出任何编造的置信概率。"""
     econ = config["economics"]
@@ -214,7 +241,7 @@ def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net
         cfg2 = copy.deepcopy(config)
         apply(cfg2)
         try:
-            m2 = compute_metrics(cfg2, context, include_sensitivity=False)
+            m2 = compute_metrics(cfg2, context, include_sensitivity=False, soiling_override_ratio=soiling_override_ratio)
             action2 = m2["decision"]["action"]
             results.append(
                 {
@@ -236,7 +263,7 @@ def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net
     }
 
 
-def compute_metrics(config: dict, context: dict, include_sensitivity: bool = True) -> dict:
+def compute_metrics(config: dict, context: dict, include_sensitivity: bool = True, soiling_override_ratio: float | None = None) -> dict:
     validate_config(config)
     site = config["site"]
     econ = config["economics"]
@@ -284,7 +311,7 @@ def compute_metrics(config: dict, context: dict, include_sensitivity: bool = Tru
             "sensitivity": None,
         }
 
-    soiling = estimate_soiling(config, context)
+    soiling = estimate_soiling(config, context, soiling_override_ratio=soiling_override_ratio)
 
     theoretical = context.get("theoretical")
     if theoretical and theoretical.get("E_d"):
@@ -395,7 +422,7 @@ def compute_metrics(config: dict, context: dict, include_sensitivity: bool = Tru
     }
 
     if include_sensitivity:
-        metrics["sensitivity"] = sensitivity_analysis(config, context, action, round(net_gain, 0))
+        metrics["sensitivity"] = sensitivity_analysis(config, context, action, round(net_gain, 0), soiling_override_ratio=soiling_override_ratio)
     else:
         metrics["sensitivity"] = None
 
