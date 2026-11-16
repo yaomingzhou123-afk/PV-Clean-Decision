@@ -6,6 +6,7 @@ from pathlib import Path
 
 import agents
 import llm
+from agent_team import run_team, to_speak_event
 from data_sources.health import update_health as ds_update_health
 from mcp_client import MCPClient
 from weather import fetch_context, demo_context
@@ -138,6 +139,41 @@ async def stream_decision(overrides: dict | None = None):
     yield envelope("decision_snapshot", metrics=metrics)
     await asyncio.sleep(0.4)
 
+    # V3.0-5：七个 Agent 真实执行（含 Critic 与 Decision），LLM 仅增强 Critic 且失败自动跳过
+    team = await run_team(metrics, config)
+    metrics = team["metrics"]
+    yield envelope("round_start", round=1)
+    for res in team["agent_results"]:
+        yield envelope(
+            "agent_result",
+            agent=res["agent_name"],
+            result={
+                "agent_name": res["agent_name"],
+                "status": res["status"],
+                "conclusion": res["conclusion"],
+                "evidence": res["evidence"],
+                "data_sources": res["data_sources"],
+                "assumptions": res["assumptions"],
+                "uncertainties": res["uncertainties"],
+                "recommendation": res["recommendation"],
+                "confidence_type": res["confidence_type"],
+                "confidence": res.get("confidence"),
+                "veto_type": res.get("veto_type"),
+            },
+        )
+        yield to_speak_event(res)
+        await asyncio.sleep(0.35)
+
+    if team["critic_issues"]:
+        yield envelope("critic_issues", issues=team["critic_issues"])
+    yield envelope(
+        "agent_decision",
+        final_action=team["final_action"],
+        veto_applied=team["veto_applied"],
+        llm_enhanced=team["llm_enhanced"],
+        decision_trace=team["decision_trace"],
+    )
+
     if metrics["decision"]["action"] == "insufficient_data":
         yield envelope("round_start", round=1)
         yield agents.speak(
@@ -156,74 +192,91 @@ async def stream_decision(overrides: dict | None = None):
         )
         return
 
-    opinions: list[dict] = []
-    yield envelope("round_start", round=1)
-    for fn, agent_id in (
-        (agents.weather_opinion, "weather"),
-        (agents.soiling_opinion, "soiling"),
-        (agents.economics_opinion, "economics"),
-        (agents.ops_opinion, "ops"),
-    ):
-        yield _agent_input_event(agent_id, metrics)
-        event = fn(metrics, config)
-        opinions.append(event)
-        yield event
-        await asyncio.sleep(0.45)
-
-    passed, critic_evt = agents.critic_judge(metrics, opinions)
-    yield critic_evt
-    await asyncio.sleep(0.35)
-
+    # 第二轮：旧协商层（可视化 + 仲裁）。若 Safety Agent 已否决，直接输出否决结论，不再进入仲裁。
     forced = False
-    if not passed and metrics["decision"].get("interval_block"):
-        passed = True
+    safety_result = next((r for r in team["agent_results"] if r["agent_name"] == "safety"), None)
+    if safety_result and safety_result.get("recommendation") == "veto":
+        yield envelope("round_start", round=2)
         yield agents.speak(
             "critic",
             "support",
-            f"距上次清洗不足最小间隔（{metrics['decision']['min_clean_interval_days']} 天），设备与成本约束优先，维持暂不清洗；建议间隔满足后再评估。",
-            refs=[f"最小间隔 {metrics['decision']['min_clean_interval_days']} 天"],
-            confidence=0.9,
+            f"安全否决生效（{safety_result.get('veto_type')}），最终决策 {team['final_action']}；"
+            "安全约束优先级高于经济收益，不进入经济仲裁。",
+            refs=["safety_veto"],
+            confidence=0.95,
         )
         await asyncio.sleep(0.3)
-
-    if not passed:
-        blockers = {o["agent"] for o in opinions if o["stance"] == "object"}
-        if "weather" in blockers:
-            metrics = agents.defer_plan(metrics, config)
-        elif "economics" in blockers or "soiling" in blockers:
-            arb_evt = agents.arbitrate(metrics, config)
-            yield arb_evt
-            await asyncio.sleep(0.4)
-            metrics = agents.apply_partial(metrics, config)
-        yield envelope("decision_snapshot", metrics=metrics)
+    else:
+        opinions: list[dict] = []
         yield envelope("round_start", round=2)
-        await asyncio.sleep(0.3)
+        for fn, agent_id in (
+            (agents.weather_opinion, "weather"),
+            (agents.soiling_opinion, "soiling"),
+            (agents.economics_opinion, "economics"),
+            (agents.ops_opinion, "ops"),
+        ):
+            yield _agent_input_event(agent_id, metrics)
+            event = fn(metrics, config)
+            opinions.append(event)
+            yield event
+            await asyncio.sleep(0.45)
 
-        opinions2 = []
-        if metrics["decision"]["action"] == "defer":
-            yield _agent_input_event("ops", metrics)
-            op = agents.ops_opinion(metrics, config)
-            opinions2.append(op)
-            yield op
-            await asyncio.sleep(0.4)
-            passed, critic_evt = agents.critic_defer_review(metrics, config)
-            yield critic_evt
-            forced = not passed
-        else:
-            for fn, agent_id in (
-                (agents.weather_opinion, "weather"),
-                (agents.economics_opinion, "economics"),
-                (agents.ops_opinion, "ops"),
-            ):
-                yield _agent_input_event(agent_id, metrics)
-                event = fn(metrics, config)
-                opinions2.append(event)
-                yield event
+        passed, critic_evt = agents.critic_judge(metrics, opinions)
+        yield critic_evt
+        await asyncio.sleep(0.35)
+
+        if not passed and metrics["decision"].get("interval_block"):
+            passed = True
+            yield agents.speak(
+                "critic",
+                "support",
+                f"距上次清洗不足最小间隔（{metrics['decision']['min_clean_interval_days']} 天），设备与成本约束优先，维持暂不清洗；建议间隔满足后再评估。",
+                refs=[f"最小间隔 {metrics['decision']['min_clean_interval_days']} 天"],
+                confidence=0.9,
+            )
+            await asyncio.sleep(0.3)
+
+        if not passed:
+            blockers = {o["agent"] for o in opinions if o["stance"] == "object"}
+            if "weather" in blockers:
+                metrics = agents.defer_plan(metrics, config)
+            elif "economics" in blockers or "soiling" in blockers:
+                arb_evt = agents.arbitrate(metrics, config)
+                yield arb_evt
                 await asyncio.sleep(0.4)
-            passed, critic_evt = agents.critic_judge(metrics, opinions2)
-            yield critic_evt
-            forced = not passed
-        await asyncio.sleep(0.3)
+                metrics = agents.apply_partial(metrics, config)
+            yield envelope("decision_snapshot", metrics=metrics)
+            yield envelope("round_start", round=3)
+            await asyncio.sleep(0.3)
+
+            opinions2 = []
+            if metrics["decision"]["action"] == "defer":
+                yield _agent_input_event("ops", metrics)
+                op = agents.ops_opinion(metrics, config)
+                opinions2.append(op)
+                yield op
+                await asyncio.sleep(0.4)
+                passed, critic_evt = agents.critic_defer_review(metrics, config)
+                yield critic_evt
+                forced = not passed
+            else:
+                for fn, agent_id in (
+                    (agents.weather_opinion, "weather"),
+                    (agents.economics_opinion, "economics"),
+                    (agents.ops_opinion, "ops"),
+                ):
+                    yield _agent_input_event(agent_id, metrics)
+                    event = fn(metrics, config)
+                    opinions2.append(event)
+                    yield event
+                    await asyncio.sleep(0.4)
+                passed, critic_evt = agents.critic_judge(metrics, opinions2)
+                yield critic_evt
+                forced = not passed
+            await asyncio.sleep(0.3)
+
+    if metrics.get("agent_execution"):
+        metrics["agent_execution"]["final_action"] = metrics["decision"]["action"]
 
     summary = await llm.chat(
         "你是光伏电站运维决策助手，用不超过100字总结本次清洗决策的关键依据，语气专业克制。",
