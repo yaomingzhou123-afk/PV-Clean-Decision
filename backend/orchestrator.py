@@ -1,16 +1,19 @@
 import asyncio
 import json
+import logging
 import os
 import time
 from pathlib import Path
 
 import agents
 import llm
-from agent_team import run_team, to_speak_event
+from agent_team import AGENT_TEAM_META, run_team, to_speak_event
 from data_sources.health import update_health as ds_update_health
 from mcp_client import MCPClient
 from weather import fetch_context, demo_context
 from pv_model import compute_metrics
+
+logger = logging.getLogger("pv.orchestrator")
 
 MCP_ENABLED = os.getenv("MCP_ENABLED", "1") == "1"
 
@@ -75,7 +78,13 @@ async def stream_decision(overrides: dict | None = None):
                 tools=[t["name"] for t in tools],
             )
         except Exception as e:
-            mcp = None
+            if mcp:
+                try:
+                    await asyncio.to_thread(mcp.close)
+                except Exception:
+                    logger.exception("关闭失败的 MCP 子进程时出错")
+                mcp = None
+            logger.warning("MCP 初始化失败，回退进程内直连：%s: %s", type(e).__name__, e)
             yield envelope("mcp_error", message=f"{type(e).__name__}: {e}")
 
     try:
@@ -125,6 +134,14 @@ async def stream_decision(overrides: dict | None = None):
             )
         else:
             metrics = compute_metrics(config, context)
+    except Exception as e:
+        logger.exception("决策主链路执行失败")
+        yield envelope(
+            "pipeline_error",
+            message=f"{type(e).__name__}: {e}",
+            hint="数据获取或计算失败，请检查数据源状态后重试",
+        )
+        return
     finally:
         if mcp:
             await asyncio.to_thread(mcp.close)
@@ -144,9 +161,12 @@ async def stream_decision(overrides: dict | None = None):
     metrics = team["metrics"]
     yield envelope("round_start", round=1)
     for res in team["agent_results"]:
+        meta = AGENT_TEAM_META.get(res["agent_name"], {})
         yield envelope(
             "agent_result",
             agent=res["agent_name"],
+            role=res.get("role") or meta.get("name"),
+            goal=res.get("goal") or meta.get("goal"),
             result={
                 "agent_name": res["agent_name"],
                 "status": res["status"],
@@ -159,6 +179,7 @@ async def stream_decision(overrides: dict | None = None):
                 "confidence_type": res["confidence_type"],
                 "confidence": res.get("confidence"),
                 "veto_type": res.get("veto_type"),
+                "inputs_read": res.get("inputs_read"),
             },
         )
         yield to_speak_event(res)
@@ -175,6 +196,7 @@ async def stream_decision(overrides: dict | None = None):
     )
 
     if metrics["decision"]["action"] == "insufficient_data":
+        logger.warning("数据不足，决策短路：%s", metrics["decision"]["reason"])
         yield envelope("round_start", round=1)
         yield agents.speak(
             "critic",
@@ -278,6 +300,13 @@ async def stream_decision(overrides: dict | None = None):
     if metrics.get("agent_execution"):
         metrics["agent_execution"]["final_action"] = metrics["decision"]["action"]
 
+    logger.info(
+        "决策完成：action=%s net_gain=%s quality=%s forced=%s",
+        metrics["decision"].get("action"),
+        (metrics.get("economics") or {}).get("net_gain"),
+        (metrics.get("data_quality") or {}).get("overall_quality"),
+        forced,
+    )
     summary = await llm.chat(
         "你是光伏电站运维决策助手，用不超过100字总结本次清洗决策的关键依据，语气专业克制。",
         f"决策：{metrics['decision']}\n收益：{metrics['economics']}\n气象：{metrics['weather']}",

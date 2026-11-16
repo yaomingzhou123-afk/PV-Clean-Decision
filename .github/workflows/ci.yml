@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 安装依赖
+        run: python -m pip install -r requirements.txt
+      - name: 编译检查
+        run: python -m compileall backend -q
+      - name: 运行测试
+        run: python -m pytest backend/tests -q
+        env:
+          MCP_ENABLED: "0"
+
+  frontend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 提取并校验内联脚本
+        run: |
+          python3 - <<'EOF' > /tmp/inline.js
+          import re
+          html = open("frontend/index.html", encoding="utf-8").read()
+          m = re.search(r"<script>(.*?)</script>", html, re.S)
+          print(m.group(1))
+          EOF
+          node --check /tmp/inline.js
+      - name: HTML 结构检查
+        run: |
+          python3 - <<'EOF'
+          from html.parser import HTMLParser
+          class P(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.stack=[]; self.errs=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag not in ('meta','link','br','input','img','hr','source','area','base','col','embed','param','track','wbr'):
+                      self.stack.append(tag)
+              def handle_endtag(self,tag):
+                  if tag in ('meta','link','br','input','img','hr'): return
+                  if self.stack and self.stack[-1]==tag: self.stack.pop()
+                  elif tag in self.stack:
+                      self.errs.append(tag)
+                      while self.stack and self.stack[-1]!=tag: self.stack.pop()
+                      if self.stack: self.stack.pop()
+                  else: self.errs.append(('unmatched',tag))
+          p=P(); p.feed(open("frontend/index.html",encoding="utf-8").read())
+          assert not p.stack and not p.errs, f"HTML 结构错误: unclosed={p.stack} errors={p.errs}"
+          print("HTML 结构检查通过")
+          EOF

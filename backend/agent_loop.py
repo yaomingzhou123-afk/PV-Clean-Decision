@@ -1,10 +1,13 @@
 import asyncio
 import json
+import logging
 
 import llm
 from agent_tools import TOOL_SCHEMAS, dispatch
 from mcp_client import MCPClient
 from orchestrator import envelope, load_config
+
+logger = logging.getLogger("pv.agent_loop")
 
 SYSTEM_PROMPT = (
     "你是光伏电站运维决策助手。回答前先判断是否需要调用工具获取真实数据，"
@@ -23,9 +26,12 @@ async def _exec_tool(mcp, name: str, args: dict, config: dict) -> dict:
                 args.setdefault("lng", config["site"]["lng"])
                 args.setdefault("loss_pct", config["economics"].get("pvgis_loss_pct", 10))
                 args.setdefault("mode", config.get("scenario", "demo"))
+            if name == "calc_economics":
+                args.setdefault("config", config)
+                args.setdefault("mode", config.get("scenario", "demo"))
             return await asyncio.to_thread(mcp.call_tool, name, args)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("MCP 工具调用失败，回退进程内直连：%s %s: %s", name, type(e).__name__, e)
     return await asyncio.to_thread(dispatch, name, args, config)
 
 
@@ -47,7 +53,13 @@ async def stream_agent(question: str, overrides: dict | None = None, max_steps: 
             tools=[t["name"] for t in tools],
         )
     except Exception as e:
-        mcp = None
+        if mcp:
+            try:
+                await asyncio.to_thread(mcp.close)
+            except Exception:
+                logger.exception("关闭失败的 MCP 子进程时出错")
+            mcp = None
+        logger.warning("Agent MCP 初始化失败：%s: %s", type(e).__name__, e)
         yield envelope("agent_mcp_error", message=f"{type(e).__name__}: {e}")
 
     messages = [

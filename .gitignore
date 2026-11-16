@@ -1,8 +1,33 @@
+# 环境与密钥
 .env
+*.env
+!.env.example
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
 .pytest_cache/
+.coverage
+htmlcov/
 .venv/
+venv/
+
+# Node / 前端构建
 node_modules/
-*.log
 frontend/downloads/
+
+# 日志
+*.log
+logs/
+
+# IDE / 系统
+.idea/
+.vscode/launch.json
+.DS_Store
+Thumbs.db
+
+# 打包产物
+dist/
+build/
+*.egg-info/

@@ -364,6 +364,103 @@
     .top-actions button { padding: 6px 9px; }
   }
 
+  .agent.pv_performance { border-left-color: var(--orange); }
+  .agent.safety { border-left-color: var(--red); }
+  .agent.decision { border-left-color: var(--gold); background: rgba(245,181,68,.05); }
+  .agent.pv_performance .avatar { background: var(--orange); }
+  .agent.safety .avatar { background: var(--red); }
+  .agent.decision .avatar { background: var(--gold); }
+  .status-badge {
+    display: inline-block; font-size: 9.5px; padding: 1px 7px; border-radius: 999px; margin-left: 6px; flex: none;
+  }
+  .status-badge.ok { color: var(--green); background: rgba(47,214,165,.1); }
+  .status-badge.error { color: var(--red); background: rgba(239,107,107,.12); }
+  .status-badge.skipped { color: var(--text-3); background: rgba(95,115,145,.15); }
+  .agent-sec { font-size: 9.5px; color: var(--text-3); letter-spacing: .4px; margin-top: 8px; }
+  .src-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .src-chip {
+    font-size: 9.5px; color: var(--text-2); border: 1px solid var(--line);
+    background: #0a1424; border-radius: 5px; padding: 1px 6px;
+  }
+  .src-chip.sim { color: var(--gold); border-color: rgba(245,181,68,.3); }
+  .src-chip.err { color: var(--red); border-color: rgba(239,107,107,.3); }
+  .agent-list { margin: 3px 0 0; padding-left: 14px; font-size: 10.5px; color: var(--text-2); line-height: 1.6; }
+  .conf-type { font-size: 9.5px; color: var(--text-3); margin-left: 5px; }
+
+  .critic-card {
+    border: 1px solid rgba(239,107,107,.4); border-left: 3px solid var(--red);
+    background: rgba(239,107,107,.06); border-radius: var(--r-10); padding: 10px 12px;
+    animation: in .32s cubic-bezier(.16,1,.3,1);
+  }
+  .critic-card .head { display: flex; align-items: center; gap: 7px; }
+  .critic-card .who { font-size: 12px; font-weight: 600; }
+  .critic-card .issue {
+    margin-top: 6px; font-size: 11.5px; line-height: 1.6; color: #f3c6c6;
+    border-top: 1px dashed rgba(239,107,107,.25); padding-top: 6px;
+  }
+  .critic-card .issue b { color: var(--red); }
+
+  .decision-card {
+    border: 1px solid rgba(245,181,68,.45); border-left: 3px solid var(--gold);
+    background: rgba(245,181,68,.06); border-radius: var(--r-10); padding: 11px 12px;
+    animation: in .32s cubic-bezier(.16,1,.3,1);
+  }
+  .decision-card .head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .decision-card .final { font-size: 15px; font-weight: 700; }
+  .decision-card .final.clean { color: var(--green); }
+  .decision-card .final.defer { color: var(--gold); }
+  .decision-card .final.hold { color: var(--text-2); }
+  .decision-card .final.insufficient_data { color: var(--red); }
+  .decision-trace { margin-top: 7px; display: flex; flex-direction: column; gap: 3px; }
+  .decision-trace .step {
+    display: flex; gap: 6px; font-size: 10.5px; color: var(--text-2); line-height: 1.5;
+  }
+  .decision-trace .step .n { color: var(--gold); font-weight: 700; flex: none; }
+  .decision-trace .step .v { color: var(--text-3); }
+
+  .env-summary {
+    margin-top: 11px; border: 1px solid var(--line); border-radius: var(--r-8);
+    background: #0a1424; padding: 8px 10px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px;
+  }
+  .env-summary .row { display: flex; justify-content: space-between; font-size: 11px; }
+  .env-summary .k { color: var(--text-3); }
+  .env-summary .v { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .verdict-evidence { margin-top: 11px; border: 1px solid var(--line); border-radius: var(--r-8); background: #0a1424; padding: 9px 10px; }
+  .verdict-evidence .t { font-size: 10.5px; color: var(--text-3); letter-spacing: .4px; margin-bottom: 6px; }
+  .verdict-evidence .ev-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .verdict-evidence .ev {
+    font-size: 10.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line);
+  }
+  .verdict-evidence .ev.pass { color: var(--green); border-color: rgba(47,214,165,.3); }
+  .verdict-evidence .ev.block { color: var(--red); border-color: rgba(239,107,107,.35); }
+  .verdict-evidence .ev.warn { color: var(--gold); border-color: rgba(245,181,68,.35); }
+  .verdict-evidence .risk { font-size: 10px; color: var(--text-3); line-height: 1.6; margin-top: 6px; }
+  .verdict-evidence .risk b { color: var(--text-2); }
+
+  .dq-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 6px; }
+  .dq-table th { text-align: left; color: var(--text-3); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .dq-table td { padding: 4px 6px; border-bottom: 1px solid var(--line-soft); color: var(--text-2); vertical-align: top; }
+  .dq-table tr:last-child td { border-bottom: 0; }
+  .dq-table .ok { color: var(--green); }
+  .dq-table .bad { color: var(--red); }
+  .dq-table .warn { color: var(--gold); }
+  .dq-table .miss { color: var(--red); font-weight: 600; }
+  .dq-wrap { overflow-x: auto; }
+  .dq-table { min-width: 480px; }
+
+  .backend-banner {
+    width: 100%; padding: 7px 12px; font-size: 11.5px; color: var(--red);
+    background: rgba(239,107,107,.1); border: 1px solid rgba(239,107,107,.35);
+    border-radius: var(--r-8); margin-bottom: 8px;
+  }
+  .pipeline-error {
+    border: 1px solid rgba(239,107,107,.4); border-left: 3px solid var(--red);
+    background: rgba(239,107,107,.06); border-radius: var(--r-10);
+    padding: 10px 12px; font-size: 12px; line-height: 1.6; color: #f3c6c6;
+  }
+
   .sim-banner { margin-bottom: 12px; border-left: 3px solid var(--gold); }
   .sim-banner .pad { display: flex; flex-direction: column; gap: 7px; }
   .sim-banner-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -453,6 +550,7 @@
   <header class="topbar">
     <div class="brand">疆光<span>·</span>清洗决策驾驶舱</div>
     <span class="site-name" id="siteName"></span>
+    <span class="site-name" id="siteCoords"></span>
     <div class="status-lights">
       <span class="light" id="lightData"><i class="lamp"></i><b>数据</b><span class="ltxt">待加载</span></span>
       <span class="light" id="lightModel"><i class="lamp"></i><b>模型</b><span class="ltxt">检测中</span></span>
@@ -462,6 +560,9 @@
       <button class="ghost" id="exportBtn" disabled>导出报告</button>
     </div>
   </header>
+  <div class="backend-banner" id="backendBanner" hidden>
+    后端不可用：无法连接 API，请确认服务已启动（<b>bash run.sh</b> 或 <b>cd backend && python main.py</b>）。
+  </div>
 
   <nav class="tabs">
     <button class="tab active" data-view="decision">清洗决策</button>
@@ -521,7 +622,7 @@
     <section class="panel">
       <h2>Agent 协商时间线 <span class="hint" id="timelineHint">等待运行</span></h2>
       <div class="timeline" id="timeline">
-        <div class="empty">点击「运行决策」，观察气象、污损、收益、调度四个 Agent 基于同一份数据快照独立判断，意见冲突时由仲裁官给出折中方案。</div>
+        <div class="empty">点击「运行决策」，七个 Agent（气象 / 污损 / 发电 / 经济 / 安全 / 审查 / 决策）基于同一份数据快照真实执行，输出结论、证据、数据源与不确定性；存在分歧时进入第二轮协商与仲裁。</div>
       </div>
     </section>
 
@@ -532,7 +633,9 @@
         <div class="why">运行后展示清洗结论、收益测算与执行窗口。</div>
       </div>
       <div class="wf" id="wf"><div class="empty">收益瀑布待生成</div></div>
+      <div class="env-summary" id="envSummary"><div class="empty">环境指标待加载</div></div>
       <div class="weather-strip" id="weatherStrip"><div class="empty">天气窗口待加载</div></div>
+      <div class="verdict-evidence" id="verdictEvidence"><div class="empty">决策证据与风险待生成</div></div>
       <div class="data-foot" id="dataFoot"></div>
     </aside>
   </section>
@@ -633,7 +736,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const state = { config: null, session: null, metrics: null, opinions: [], inputs: {}, history: [], current: null, sim: { specs: [], defaults: null, scenarios: [], custom: [], values: {}, result: null, timer: null, reqId: 0, scenarioName: "自定义模拟场景（模拟）" } };
+const state = {
+  config: null, session: null, metrics: null, opinions: [], inputs: {}, history: [], current: null,
+  teamAgents: {}, teamPhaseDone: false, teamResults: [], criticIssues: [], agentDecision: null,
+  sim: { specs: [], defaults: null, scenarios: [], custom: [], values: {}, result: null, timer: null, reqId: 0, scenarioName: "自定义模拟场景（模拟）" }
+};
 
 function $(id) { return document.getElementById(id); }
 function esc(v) {
@@ -650,11 +757,24 @@ function toast(msg) {
 }
 function actionLabel(a) { return { clean: "建议清洗", defer: "建议延后", hold: "暂不清洗", insufficient_data: "数据不足" }[a] || a; }
 function stanceLabel(s) { return { support: "支持", object: "反对", propose: "提议" }[s] || s; }
-function shortName(a) { return { weather: "气象", soiling: "污损", economics: "收益", ops: "调度", arbiter: "仲裁", critic: "主席" }[a] || "A"; }
+function shortName(a) {
+  return {
+    weather: "气", soiling: "污", economics: "益", ops: "调", arbiter: "仲", critic: "审",
+    pv_performance: "发", safety: "安", decision: "决"
+  }[a] || "A";
+}
+function showBackendDown() {
+  const b = $("backendBanner");
+  if (b) b.hidden = false;
+}
 
 fetch("/api/health").then(r => r.json()).then(d => {
   setLight("lightModel", d.mode === "llm" ? "good" : "", d.mode === "llm" ? "LLM 增强" : "规则引擎");
-}).catch(() => { setLight("lightModel", "bad", "离线"); });
+}).catch(() => {
+  setLight("lightModel", "bad", "离线");
+  setLight("lightData", "bad", "后端不可用");
+  showBackendDown();
+});
 
 fetch("/api/config").then(r => r.json()).then(c => {
   state.config = c;
@@ -667,8 +787,13 @@ fetch("/api/config").then(r => r.json()).then(c => {
     esc(c.site.city) + "<br/>系统效率 <b>" + esc(c.economics.efficiency) + "</b> · 评估周期 <b>" + esc(c.economics.horizon_days) + " 天</b>";
   const siteEl = $("siteName");
   if (siteEl) siteEl.textContent = c.site.name;
+  const coordsEl = $("siteCoords");
+  if (coordsEl) coordsEl.textContent = c.site.lat + ", " + c.site.lng;
   loadHistory();
-}).catch(() => { $("siteInfo").textContent = "配置加载失败"; });
+}).catch(() => {
+  $("siteInfo").textContent = "配置加载失败";
+  showBackendDown();
+});
 
 function qualityBadge(dq) {
   if (!dq) return { cls: "", text: "数据待加载" };
@@ -701,30 +826,38 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
 function updateQuality(dq) {
   const b = qualityBadge(dq);
   setLight("lightData", b.cls, b.text);
-  const srcCls = (s) => s === "live" ? "ok" : (s === "demo" ? "demo" : "bad");
-  let html =
-    "气象 <span class='" + srcCls(dq.forecast_quality) + "'>" + esc(dq.forecast_source || "--") + "</span> · " +
-    "空气质量 <span class='" + srcCls(dq.air_quality) + "'>" + esc(dq.air_source || "--") + "</span><br/>" +
-    "拉取时间 " + esc(dq.fetched_at || "--") + "<br/>" + esc(dq.note || "");
   const records = dq.data_sources || [];
+  const kindLabel = { forecast: "预报", historical: "历史", user_input: "输入", simulation: "模拟" };
+  const unitText = (u) => {
+    if (!u || typeof u !== "object") return "--";
+    return Object.keys(u).map(k => k + "=" + u[k]).join("，");
+  };
+  let html =
+    "气象 <b>" + esc(dq.forecast_source || "--") + "</b> · 空气质量 <b>" + esc(dq.air_source || "--") + "</b>" +
+    " · 拉取时间 " + esc(dq.fetched_at || "--") + "<br/>" + esc(dq.note || "");
   if (records.length) {
-    const kindLabel = { forecast: "预报", historical: "历史", user_input: "输入", simulation: "模拟" };
-    html += '<div class="ds-list">';
+    html += '<div class="dq-wrap"><table class="dq-table"><thead><tr>' +
+      '<th>数据源</th><th>类型</th><th>获取时间</th><th>覆盖时间</th><th>单位</th><th>缓存</th><th>模拟</th><th>缺失</th><th>状态</th>' +
+      '</tr></thead><tbody>';
     records.forEach(r => {
-      const stCls = (r.status === "ok" || r.status === "cached") ? "ok" : "bad";
-      const stLabel = r.status === "cached" ? "缓存" : (r.status === "ok" ? "成功" : "失败");
-      const flags = [];
-      if (r.is_cached) flags.push("缓存");
-      if (r.is_simulated) flags.push("模拟");
-      html += '<div class="ds-row">' +
-        '<span class="ds-src">' + esc(r.source) + '</span>' +
-        '<span>' + esc(kindLabel[r.data_kind] || r.data_kind) + '</span>' +
-        '<span class="' + stCls + '">' + esc(stLabel + (flags.length ? " · " + flags.join(" · ") : "")) + '</span>' +
-        '<span class="ds-time">' + esc(r.valid_time || "") + '</span>' +
-        '</div>';
-      if (r.error_message) html += '<div class="ds-err">' + esc(r.error_message) + '</div>';
+      const missing = r.value == null;
+      const statusCls = r.status === "error" ? "bad" : (r.is_cached ? "warn" : "ok");
+      const statusText = r.status === "error" ? "失败" : (r.is_cached ? "缓存" : "成功");
+      html += '<tr>' +
+        '<td>' + esc(r.source) + '</td>' +
+        '<td>' + esc(kindLabel[r.data_kind] || r.data_kind || "--") + '</td>' +
+        '<td>' + esc(r.fetched_at || "--") + '</td>' +
+        '<td>' + esc(r.valid_time || "--") + '</td>' +
+        '<td>' + esc(unitText(r.unit)) + '</td>' +
+        '<td>' + (r.is_cached ? '<span class="warn">是</span>' : "否") + '</td>' +
+        '<td>' + (r.is_simulated ? '<span class="warn">是</span>' : "否") + '</td>' +
+        '<td>' + (missing ? '<span class="miss">缺失</span>' : "完整") + '</td>' +
+        '<td class="' + statusCls + '">' + esc(statusText) + (r.error_message ? "：" + esc(r.error_message) : "") + '</td>' +
+        '</tr>';
     });
-    html += '</div>';
+    html += '</tbody></table></div>';
+  } else {
+    html += '<div class="empty">暂无数据源记录</div>';
   }
   $("dataFoot").innerHTML = html;
 }
@@ -736,7 +869,9 @@ function renderKpis(m) {
     ? "PVGIS E_d " + fmt1(e.pvgis && e.pvgis.E_d) + " kWh/kWp"
     : "降级公式（气候均值缺失）";
   $("kpiLoss").innerHTML = fmt1(s.loss_pct) + "<small>%</small>";
-  $("kpiLossFoot").textContent = "PM10 " + fmt1(s.pm10) + " · 运行 " + s.days + " 天";
+  const methodText = s.method === "user_assumption" ? "手动假设" : "模型估算";
+  const pm25Text = s.pm2_5 == null ? "--" : fmt1(s.pm2_5);
+  $("kpiLossFoot").textContent = "PM10 " + fmt1(s.pm10) + " · PM2.5 " + pm25Text + " · " + methodText + "（非实测）";
   $("kpiNet").innerHTML = fmt(e.net_gain) + "<small>元</small>";
   $("kpiNetFoot").textContent = "清洗成本 " + fmt(e.cleaning_cost) + " 元";
   $("kpiPayback").innerHTML = (e.payback_days == null ? "--" : fmt1(e.payback_days)) + "<small>天</small>";
@@ -774,6 +909,140 @@ function renderVerdict(m) {
     (d2.date === best ? '<span class="tag">推荐窗口</span>' : "") +
     '</div>'
   ).join("") || '<div class="empty">无天气数据</div>';
+
+  const w = m.weather || {}, s2 = m.soiling || {};
+  const envRow = (k, v) => '<div class="row"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span></div>';
+  $("envSummary").innerHTML =
+    envRow("平均辐照", fmt1(w.avg_irradiance) + " kWh/m²") +
+    envRow("未来 48h 降雨", fmt1(w.rain_next48) + " mm") +
+    envRow("最大风速", fmt1(w.wind_max) + " m/s") +
+    envRow("PM10 / PM2.5", fmt1(s2.pm10) + " / " + (s2.pm2_5 == null ? "--" : fmt1(s2.pm2_5)) + " μg/m³");
+
+  const d3 = m.decision || {};
+  const evChip = (label, pass, passText, blockText) =>
+    '<span class="ev ' + (pass ? "pass" : "block") + '">' + esc(label) + "：" + esc(pass ? passText : blockText) + '</span>';
+  const weatherOk = d3.weather_block === false;
+  const intervalOk = d3.interval_block === false;
+  const econOk = d3.economics_ok === true;
+  const risks = [];
+  (s2.drivers || []).slice(0, 3).forEach(x => risks.push(x));
+  (s2.limitations || []).slice(0, 2).forEach(x => risks.push(x));
+  $("verdictEvidence").innerHTML =
+    '<div class="t">决策证据</div>' +
+    '<div class="ev-row">' +
+    evChip("天气窗口", weatherOk, "满足", d3.weather_block ? "阻塞" : "未知") +
+    evChip("最小间隔", intervalOk, "满足", d3.interval_block ? "不足" : "未知") +
+    evChip("经济性", econOk, "净收益为正", d3.economics_ok === false ? "净收益非正" : "未知") +
+    '</div>' +
+    (risks.length ? '<div class="risk"><b>主要风险与限制：</b><br/>' + risks.map(esc).join('<br/>') + '</div>' : "");
+}
+
+function renderAgentResult(evt) {
+  const r = evt.result || {};
+  const el = document.createElement("div");
+  el.className = "agent " + esc(evt.agent);
+  const statusCls = r.status === "ok" ? "ok" : (r.status === "error" ? "error" : "skipped");
+  const statusText = { ok: "已执行", error: "执行错误", skipped: "跳过" }[r.status] || (r.status || "--");
+  const recLabel = {
+    approve: "支持", veto: "否决", window_suitable: "窗口适合", window_blocked: "窗口阻塞",
+    not_significant: "不显著", significant: "显著", profitable: "可盈利", unprofitable: "不经济",
+    clear: "检查通过", flag: "提示", reject: "反对", final_clean: "建议清洗", final_hold: "暂不清洗",
+    final_defer: "建议延后", final_insufficient_data: "数据不足"
+  }[r.recommendation] || (r.recommendation || "--");
+  const recCls = { veto: "object", reject: "object", window_blocked: "object", unprofitable: "object",
+    final_clean: "support", approve: "support", clear: "support", profitable: "support",
+    final_hold: "propose", final_defer: "propose", flag: "propose" }[r.recommendation] || "propose";
+
+  const srcChips = (r.data_sources || []).map(s =>
+    '<span class="src-chip' + (s.is_simulated ? " sim" : "") + (s.status === "error" ? " err" : "") + '">' +
+    esc(s.source || "--") + (s.is_simulated ? " · 模拟" : "") + (s.status === "error" ? " · 失败" : "") + '</span>'
+  ).join("");
+
+  const evTable = (r.evidence || []).length ? (
+    '<div class="ev-table"><div class="row head"><span>指标</span><span>值</span><span>阈值</span><span>判定</span></div>' +
+    r.evidence.map(e2 => '<div class="row"><span>' + esc(e2.metric) + '</span><span class="v">' + esc(e2.value) + ' ' + esc(e2.unit) +
+      '</span><span>' + esc(e2.threshold) + '</span><span class="' + (e2.verdict === "exceed" || e2.verdict === "below" ? "verdict-bad" : "") + '">' + esc(e2.verdict) + '</span></div>').join("") +
+    '</div>'
+  ) : "";
+
+  const listHtml = (title, items) => items && items.length
+    ? '<div class="agent-sec">' + esc(title) + '</div><ul class="agent-list">' + items.map(esc).map(x => "<li>" + x + "</li>").join("") + '</ul>'
+    : "";
+
+  const confHtml = r.confidence != null
+    ? '<div class="conf-row"><div class="conf-bar"><i class="' + esc(recCls) + '" style="width:' +
+      Math.max(2, Math.min(100, (num(r.confidence) - 0.6) / 0.39 * 100)) + '%"></i></div>' +
+      '<span class="conf-num">置信度 ' + esc(num(r.confidence).toFixed(2)) +
+      (r.confidence_type === "heuristic" ? '<span class="conf-type">启发式评分，非概率</span>' : "") + '</span></div>'
+    : "";
+
+  el.innerHTML =
+    '<div class="head"><div class="avatar">' + esc(shortName(evt.agent)) + '</div>' +
+    '<div><div class="who">' + esc(evt.role || r.agent_name || evt.agent) + '</div>' +
+    '<div class="goal">' + esc(evt.goal || "") + '</div></div>' +
+    '<span class="status-badge ' + statusCls + '">' + esc(statusText) + '</span>' +
+    '<span class="stance ' + recCls + '" style="margin-left:auto">' + esc(recLabel) + '</span></div>' +
+    '<p class="msg">' + esc(r.conclusion || "--") + '</p>' + confHtml +
+    (srcChips ? '<div class="agent-sec">使用的数据源</div><div class="src-chips">' + srcChips + '</div>' : "") +
+    evTable +
+    listHtml("假设", r.assumptions) +
+    listHtml("不确定性", r.uncertainties) +
+    (r.veto_type ? '<div class="agent-sec">否决类型：<b style="color:var(--red)">' + esc(r.veto_type) + '</b></div>' : "");
+  const tl = $("timeline");
+  tl.appendChild(el);
+  tl.scrollTop = tl.scrollHeight;
+}
+
+function renderCriticIssues(issues) {
+  if (!issues || !issues.length) return;
+  const el = document.createElement("div");
+  el.className = "critic-card";
+  const sevLabel = { high: "高危", medium: "中", low: "低" };
+  el.innerHTML =
+    '<div class="head"><div class="avatar" style="background:var(--red)">审</div>' +
+    '<div><div class="who">Critic 审查发现</div></div></div>' +
+    issues.map(i =>
+      '<div class="issue"><b>[' + esc(sevLabel[i.severity] || i.severity || "--") + ']</b> ' +
+      esc(i.agent ? i.agent + "：" : "") + esc(i.issue || "") + '</div>'
+    ).join("");
+  const tl = $("timeline");
+  tl.appendChild(el);
+  tl.scrollTop = tl.scrollHeight;
+}
+
+function renderAgentDecision(evt) {
+  const el = document.createElement("div");
+  el.className = "decision-card";
+  const action = evt.final_action || "hold";
+  const trace = evt.decision_trace || [];
+  const traceHtml = trace.length
+    ? '<div class="decision-trace">' + trace.map((t, i) =>
+        '<div class="step"><span class="n">' + (i + 1) + '</span><span>' + esc(t.factor || t.name || "--") +
+        '：<span class="v">' + esc(t.value != null ? t.value : (t.result || "--")) + '</span></span></div>'
+      ).join("") + '</div>'
+    : "";
+  el.innerHTML =
+    '<div class="head"><div class="avatar" style="background:var(--gold)">决</div>' +
+    '<div><div class="who">Decision Agent · 最终仲裁</div></div>' +
+    '<span class="final ' + esc(action) + '" style="margin-left:auto">' + esc(actionLabel(action)) + '</span></div>' +
+    '<div class="msg" style="margin-top:6px">' +
+    (evt.veto_applied ? '<b style="color:var(--red)">安全否决已生效</b>；' : "") +
+    'LLM 增强：' + (evt.llm_enhanced ? "已启用" : "未启用（规则审查独立完成）") +
+    '</div>' + traceHtml;
+  const tl = $("timeline");
+  tl.appendChild(el);
+  tl.scrollTop = tl.scrollHeight;
+}
+
+function renderPipelineError(evt) {
+  const el = document.createElement("div");
+  el.className = "pipeline-error";
+  el.innerHTML = '<b>决策管线执行失败</b><br/>' + esc(evt.message || "未知错误") +
+    (evt.hint ? '<br/>' + esc(evt.hint) : "");
+  const tl = $("timeline");
+  tl.appendChild(el);
+  tl.scrollTop = tl.scrollHeight;
+  setLight("lightDecision", "bad", "执行失败");
 }
 
 function renderAgent(evt) {
@@ -949,7 +1218,32 @@ function buildReport(m, s) {
     (o.evidence || []).forEach(v => lines.push("- " + v.metric + "：" + v.value + " " + v.unit + "（阈值 " + v.threshold + "，判定 " + v.verdict + "）"));
     lines.push("");
   });
-  lines.push("## 五、数据来源", "");
+  if ((state.teamResults || []).length) {
+    lines.push("## 五、七 Agent 执行结果（结构化输出）", "");
+    state.teamResults.forEach(r => {
+      const res = r.result || {};
+      lines.push("### " + (r.role || res.agent_name || "--") + "（状态：" + (res.status || "--") + "）");
+      lines.push("- 职责：" + (r.goal || "--"));
+      lines.push("- 结论：" + (res.conclusion || "--"));
+      (res.evidence || []).forEach(v => lines.push("- 证据：" + v.metric + " = " + v.value + " " + v.unit + "（阈值 " + v.threshold + "，判定 " + v.verdict + "）"));
+      (res.assumptions || []).forEach(a => lines.push("- 假设：" + a));
+      (res.uncertainties || []).forEach(u => lines.push("- 不确定性：" + u));
+      lines.push("");
+    });
+  }
+  if ((state.criticIssues || []).length) {
+    lines.push("### Critic 审查发现", "");
+    state.criticIssues.forEach(i => lines.push("- [" + (i.severity || "--") + "] " + (i.agent ? i.agent + "：" : "") + (i.issue || "")));
+    lines.push("");
+  }
+  if (state.agentDecision) {
+    lines.push("### Decision Agent 最终仲裁", "");
+    lines.push("- 最终决策：**" + actionLabel(state.agentDecision.final_action) + "**");
+    lines.push("- 安全否决：" + (state.agentDecision.veto_applied ? "已生效" : "未触发"));
+    lines.push("- LLM 增强：" + (state.agentDecision.llm_enhanced ? "已启用" : "未启用（规则审查独立完成）"));
+    lines.push("");
+  }
+  lines.push("## 六、数据来源", "");
   lines.push("- 辐照/降水/风速/云量：Open-Meteo Forecast（免费，无 Key）");
   lines.push("- PM10/沙尘：Open-Meteo Air Quality（免费，无 Key）");
   lines.push("- 理论发电量：PVGIS（欧盟 JRC，ERA5 2005-2023）");
@@ -983,6 +1277,11 @@ async function run() {
   };
   state.opinions = [];
   state.metrics = null;
+  state.teamAgents = {};
+  state.teamPhaseDone = false;
+  state.teamResults = [];
+  state.criticIssues = [];
+  state.agentDecision = null;
   state.current = { ...payload, site: state.config ? state.config.site : {} };
   $("timeline").innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
   $("timelineHint").textContent = "协商中…";
@@ -997,7 +1296,7 @@ async function run() {
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.detail ? JSON.stringify(err.detail) : "HTTP " + resp.status);
+      throw new Error(errorText(err) || "HTTP " + resp.status);
     }
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -1073,8 +1372,26 @@ function handleEvent(evt) {
     case "agent_input":
       state.inputs[evt.agent] = evt.input;
       break;
+    case "agent_result":
+      state.teamAgents[evt.agent] = true;
+      state.teamResults.push(evt);
+      renderAgentResult(evt);
+      break;
+    case "critic_issues":
+      state.criticIssues = evt.issues || [];
+      renderCriticIssues(state.criticIssues);
+      break;
+    case "agent_decision":
+      state.teamPhaseDone = true;
+      state.agentDecision = evt;
+      renderAgentDecision(evt);
+      break;
+    case "pipeline_error":
+      renderPipelineError(evt);
+      break;
     case "agent_speak":
       state.opinions.push(evt);
+      if (!state.teamPhaseDone && state.teamAgents[evt.agent]) break;
       renderAgent(evt);
       break;
     case "final":
@@ -1161,7 +1478,7 @@ async function runAgent() {
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      throw new Error(err.detail ? JSON.stringify(err.detail) : "HTTP " + resp.status);
+      throw new Error(errorText(err) || "HTTP " + resp.status);
     }
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -1256,7 +1573,7 @@ function scheduleSimulation() {
   state.sim.timer = setTimeout(runSimulation, 350);
 }
 
-function simErrorText(body) {
+function errorText(body) {
   if (!body) return "请求失败";
   if (Array.isArray(body.detail)) {
     return body.detail.map(d => {
@@ -1265,6 +1582,10 @@ function simErrorText(body) {
     }).join("；");
   }
   return typeof body.detail === "string" ? body.detail : "请求失败";
+}
+
+function simErrorText(body) {
+  return errorText(body);
 }
 
 function simulatePayload() {

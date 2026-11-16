@@ -14,7 +14,9 @@ from kb.retriever import retrieve
 from weather import demo_context, fetch_context
 from pv_model import compute_metrics
 
-SERVER_INFO = {"name": "pv-agent-mcp", "version": "1.0.0"}
+CONFIG_PATH = BASE_DIR / "data" / "pv_config.json"
+
+SERVER_INFO = {"name": "pv-agent-mcp", "version": "1.1.0"}
 PROTOCOL_VERSION = "2024-11-05"
 
 TOOLS = [
@@ -64,27 +66,70 @@ def _text(payload) -> dict:
     return {"content": [{"type": "text", "text": json.dumps(payload, ensure_ascii=False)}]}
 
 
+def _num(value, name: str, lo: float, hi: float) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} 必须是数字") from None
+    if not (lo <= number <= hi):
+        raise ValueError(f"{name} 必须在 {lo}–{hi} 之间")
+    return number
+
+
 def _call_tool(name: str, args: dict) -> dict:
     if name == "get_site_data":
-        if args.get("mode", "live") == "demo":
+        mode = args.get("mode", "live")
+        if mode not in ("live", "demo"):
+            raise ValueError("mode 必须为 live 或 demo")
+        lat = _num(args.get("lat", 44.01), "lat", -90, 90)
+        lng = _num(args.get("lng", 87.31), "lng", -180, 180)
+        loss_pct = _num(args.get("loss_pct", 10), "loss_pct", 0, 30)
+        if mode == "demo":
             return _text(demo_context())
         import asyncio
 
-        ctx = asyncio.run(
-            fetch_context(
-                float(args.get("lat", 44.01)),
-                float(args.get("lng", 87.31)),
-                float(args.get("loss_pct", 10)),
-            )
-        )
+        ctx = asyncio.run(fetch_context(lat, lng, loss_pct))
         return _text(ctx)
     if name == "search_knowledge":
-        query = args.get("query", "")
+        query = args.get("query")
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query 必须为非空字符串")
         applies_to = args.get("applies_to")
-        top_k = int(args.get("top_k", 2))
+        if applies_to is not None and not isinstance(applies_to, str):
+            raise ValueError("applies_to 必须是字符串")
+        try:
+            top_k = int(args.get("top_k", 2))
+        except (TypeError, ValueError):
+            raise ValueError("top_k 必须是整数") from None
+        if not (1 <= top_k <= 10):
+            raise ValueError("top_k 必须在 1–10 之间")
         return _text({"results": retrieve(query, applies_to=applies_to, top_k=top_k)})
     if name == "calc_economics":
-        metrics = compute_metrics(args["config"], args["context"])
+        config = args.get("config")
+        if config is None:
+            config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        if not isinstance(config, dict):
+            raise ValueError("config 必须是对象")
+        context = args.get("context")
+        if context is None:
+            mode = args.get("mode", config.get("scenario", "demo"))
+            if mode not in ("live", "demo"):
+                raise ValueError("mode 必须为 live 或 demo")
+            if mode == "demo":
+                context = demo_context()
+            else:
+                import asyncio
+
+                context = asyncio.run(
+                    fetch_context(
+                        float(config.get("site", {}).get("lat", 44.01)),
+                        float(config.get("site", {}).get("lng", 87.31)),
+                        float(config.get("economics", {}).get("pvgis_loss_pct", 10)),
+                    )
+                )
+        if not isinstance(context, dict):
+            raise ValueError("context 必须是对象")
+        metrics = compute_metrics(config, context)
         return _text(metrics)
     raise KeyError(f"unknown tool: {name}")
 
@@ -118,6 +163,12 @@ def handle(req: dict) -> dict | None:
                 "jsonrpc": "2.0",
                 "id": req_id,
                 "error": {"code": -32601, "message": str(e)},
+            }
+        except ValueError as e:
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32602, "message": f"invalid params: {e}"},
             }
         except Exception as e:
             return {

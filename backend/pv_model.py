@@ -132,6 +132,7 @@ def estimate_soiling(config: dict, context: dict, soiling_override_ratio: float 
         "daily_rate_pct": round(daily_rate * 100, 3),
         "days": days,
         "pm10": pm10,
+        "pm2_5": pm25,
         "dust": air.get("dust"),
         "loss_pct": round(loss * 100, 1),
         "loss_ratio": round(loss, 4),
