@@ -73,7 +73,7 @@ cd backend && python -m pytest tests -q  # 31 项测试应全绿
 
 ## 关键事实速查
 
-- 测试基线：**98 项全绿**（`python3 -m pytest backend/tests -q`，项目根目录执行）
+- 测试基线：**206 项全绿**（`python3 -m pytest backend/tests -q`，项目根目录执行；V3.0-7 稳定性修复后）
 - demo 净收益：**39,478 元**（recovery_efficiency=0.95 生效；旧值 41,975 已作废，答辩材料务必用新值）
 - 四种决策：clean / defer / hold / **insufficient_data**（live 降级时不基于模拟数据给真实决策）
 - 数据源：Open-Meteo 预报+空气质量、PVGIS 历史、NASA POWER 可选（默认关）；全部带 DataRecord 元数据

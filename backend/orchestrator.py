@@ -61,7 +61,7 @@ async def stream_decision(overrides: dict | None = None):
         "session_start",
         site=config["site"],
         economics=config["economics"],
-        agents=[{"id": k, **v} for k, v in agents.AGENT_META.items() if k not in ("critic", "arbiter")],
+        agents=[{"id": k, "name": v["name"], "goal": v["goal"]} for k, v in AGENT_TEAM_META.items()],
         mode=llm.mode(),
     )
 
@@ -154,6 +154,28 @@ async def stream_decision(overrides: dict | None = None):
         data_quality=metrics["data_quality"],
     )
     yield envelope("decision_snapshot", metrics=metrics)
+
+    # P0-1 修复：数据不足时在 Agent 团队执行前短路，
+    # 避免 Agent 把 None 当 0 输出"具备作业窗口/损失 None%"等误导结论
+    if metrics["decision"]["action"] == "insufficient_data":
+        logger.warning("数据不足，决策短路：%s", metrics["decision"]["reason"])
+        yield envelope("round_start", round=1)
+        yield agents.speak(
+            "critic",
+            "object",
+            f"数据不足，无法启动协商：{metrics['decision']['reason']}",
+            refs=metrics["decision"].get("data_insufficient", []),
+            confidence=0.95,
+        )
+        yield envelope(
+            "final",
+            metrics=metrics,
+            forced=False,
+            mode=llm.mode(),
+            summary="数据不足，暂时无法判断；请检查数据源状态后重试。",
+        )
+        return
+
     await asyncio.sleep(0.4)
 
     # V3.0-5：七个 Agent 真实执行（含 Critic 与 Decision），LLM 仅增强 Critic 且失败自动跳过
@@ -194,25 +216,6 @@ async def stream_decision(overrides: dict | None = None):
         llm_enhanced=team["llm_enhanced"],
         decision_trace=team["decision_trace"],
     )
-
-    if metrics["decision"]["action"] == "insufficient_data":
-        logger.warning("数据不足，决策短路：%s", metrics["decision"]["reason"])
-        yield envelope("round_start", round=1)
-        yield agents.speak(
-            "critic",
-            "object",
-            f"数据不足，无法启动协商：{metrics['decision']['reason']}",
-            refs=metrics["decision"].get("data_insufficient", []),
-            confidence=0.95,
-        )
-        yield envelope(
-            "final",
-            metrics=metrics,
-            forced=False,
-            mode=llm.mode(),
-            summary="数据不足，暂时无法判断；请检查数据源状态后重试。",
-        )
-        return
 
     # 第二轮：旧协商层（可视化 + 仲裁）。若 Safety Agent 已否决，直接输出否决结论，不再进入仲裁。
     forced = False
@@ -268,6 +271,16 @@ async def stream_decision(overrides: dict | None = None):
                 await asyncio.sleep(0.4)
                 metrics = agents.apply_partial(metrics, config)
             yield envelope("decision_snapshot", metrics=metrics)
+            # P0-7 修复：第二轮修订决策后，补发 agent_decision 更新事件，
+            # 保证前端/报告与最终 metrics 一致
+            yield envelope(
+                "agent_decision",
+                final_action=metrics["decision"]["action"],
+                veto_applied=team["veto_applied"],
+                llm_enhanced=team["llm_enhanced"],
+                decision_trace=team["decision_trace"],
+                second_round_revision=True,
+            )
             yield envelope("round_start", round=3)
             await asyncio.sleep(0.3)
 
@@ -297,7 +310,9 @@ async def stream_decision(overrides: dict | None = None):
                 forced = not passed
             await asyncio.sleep(0.3)
 
+    # P0-7 修复：记录两轮决策，不再丢失第一轮 Decision Agent 的仲裁结果
     if metrics.get("agent_execution"):
+        metrics["agent_execution"]["first_round_action"] = team["final_action"]
         metrics["agent_execution"]["final_action"] = metrics["decision"]["action"]
 
     logger.info(

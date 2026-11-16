@@ -216,11 +216,21 @@ def ops_opinion(m: dict, config: dict) -> dict:
             evidence=[_ev("best_irradiance", w["best_irradiance"], w["avg_irradiance"], "kWh/m²", "above" if w["best_irradiance"] >= w["avg_irradiance"] else "within", abs(w["best_irradiance"] - w["avg_irradiance"]) / max(w["avg_irradiance"], 0.1))],
         )
     if d["action"] == "defer":
+        # P0-10 修复：best_date 可能为 None（预报期内无满足安全阈值的日期）
+        if w.get("best_date"):
+            return speak(
+                "ops",
+                "propose",
+                f"建议延后至 {w['best_date']}，先做设备与安全交底，待天气窗口满足后再执行。",
+                refs=[w["best_date"]],
+                confidence=confidence,
+                evidence=[_ev("wind_max", w["wind_max"], config["safety"]["wind_limit_ms"], "m/s", "exceed" if w["wind_max"] >= config["safety"]["wind_limit_ms"] else "within", abs(w["wind_max"] - config["safety"]["wind_limit_ms"]) / config["safety"]["wind_limit_ms"])],
+            )
         return speak(
             "ops",
             "propose",
-            f"建议延后至 {w['best_date']}，先做设备与安全交底，待天气窗口满足后再执行。",
-            refs=[w["best_date"]],
+            "当前预报期内无满足安全阈值的作业窗口，建议持续监测天气并在安全窗口出现后复评。",
+            refs=["暂无安全窗口"],
             confidence=confidence,
             evidence=[_ev("wind_max", w["wind_max"], config["safety"]["wind_limit_ms"], "m/s", "exceed" if w["wind_max"] >= config["safety"]["wind_limit_ms"] else "within", abs(w["wind_max"] - config["safety"]["wind_limit_ms"]) / config["safety"]["wind_limit_ms"])],
         )
@@ -262,13 +272,15 @@ def critic_defer_review(m: dict, config: dict) -> tuple[bool, dict]:
     d = m["decision"]
     w = m["weather"]
     evidence, margin, blocked = _weather_evidence(m, config)
-    consistent = blocked == d.get("weather_block") and bool(w.get("best_date"))
+    # P0-10 修复：best_date 为 None（无安全窗口）不代表决策不一致，只检查天气阻塞是否属实
+    consistent = blocked == d.get("weather_block")
     if consistent:
+        window_text = f"复评窗口 {w['best_date']}" if w.get("best_date") else "预报期内暂无安全作业窗口，需持续监测"
         return True, speak(
             "critic",
             "support",
-            f"延后决策经独立复核成立：降水 {w['rain_next48']} mm / 风速 {w['wind_max']} m/s 与安全阈值比对确属阻塞，复评窗口 {w['best_date']}。",
-            refs=["延后", w["best_date"]],
+            f"延后决策经独立复核成立：降水 {w['rain_next48']} mm / 风速 {w['wind_max']} m/s 与安全阈值比对确属阻塞，{window_text}。",
+            refs=["延后", w.get("best_date") or "暂无安全窗口"],
             confidence=_confidence(margin),
             evidence=evidence,
         )
@@ -328,21 +340,45 @@ def apply_partial(m: dict, config: dict) -> dict:
         "net_gain": net,
         "payback_days": round(cost / daily_revenue, 1) if daily_revenue > 0 else None,
     }
+    # P0-6 修复：按最终经济结果生成 action/window/economics_ok/reason，
+    # 保证决策字段一致（不再出现 action=clean 但 window=None/economics_ok=False）
+    weather_block = bool(m["decision"].get("weather_block"))
+    if net > 0 and not weather_block:
+        action = "clean"
+        window = m["weather"].get("best_date")
+        reason = (
+            f"全站清洗不经济，按污损分布改为清洗 {int(ratio * 100)}% 方阵"
+            f"（分区净收益 {net} 元），优先恢复高污损区域"
+        )
+    else:
+        action = m["decision"]["action"]
+        window = m["decision"].get("window")
+        if weather_block:
+            reason = "天气窗口不满足，分区清洗同样不可执行，建议等待安全窗口"
+        else:
+            reason = f"分区清洗净收益仍为 {net} 元（非正），不建议执行清洗"
     updated["decision"] = {
         **m["decision"],
-        "action": "clean" if net > 0 and not m["decision"]["weather_block"] else m["decision"]["action"],
+        "action": action,
         "scope": "partial",
-        "reason": f"全站清洗不经济，按污损分布改为清洗 {int(ratio * 100)}% 方阵，优先恢复高污损区域",
+        "window": window,
+        "economics_ok": net > 0,
+        "reason": reason,
     }
     return updated
 
 
 def defer_plan(m: dict, config: dict) -> dict:
     updated = dict(m)
+    best = m["weather"].get("best_date")
     updated["decision"] = {
         **m["decision"],
         "action": "defer",
-        "window": m["weather"]["best_date"],
-        "reason": "天气窗口不满足，延后至最佳辐照日并保留复评",
+        "window": best,
+        "reason": (
+            f"天气窗口不满足，延后至最佳辐照日 {best} 并保留复评"
+            if best
+            else "天气窗口不满足，预报期内暂无安全作业窗口，持续监测后复评"
+        ),
     }
     return updated

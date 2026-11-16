@@ -159,7 +159,7 @@ def _cost_breakdown(econ: dict) -> dict:
 
 
 def _check_data_sufficiency(config: dict, context: dict) -> list:
-    """数据充分性检查：任何一条不满足即无法给出可信决策。"""
+    """数据充分性检查：关键源（预报/空气质量）缺失或降级即无法给出可信决策。"""
     problems = []
     days = (context.get("forecast") or {}).get("days") or []
     if len(days) < 2:
@@ -168,8 +168,10 @@ def _check_data_sufficiency(config: dict, context: dict) -> list:
         problems.append("PM10 缺失，无法估算污损损失")
     if not context.get("theoretical"):
         problems.append("理论发电量基准缺失（PVGIS 不可用），将使用预报辐照降级公式")
-    if context.get("quality") == "fallback" and config.get("scenario") == "live":
-        problems.append("实时数据获取失败（已降级为样例），不基于模拟数据给出真实决策")
+    forecast_quality = (context.get("forecast") or {}).get("quality")
+    air_quality = (context.get("air") or {}).get("quality")
+    if config.get("scenario") == "live" and "fallback" in (context.get("quality"), forecast_quality, air_quality):
+        problems.append("实时数据获取失败（关键源已降级为模拟样例），不基于模拟数据给出真实决策")
     return problems
 
 
@@ -190,12 +192,12 @@ def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net
     soiling_cfg = config["soiling"]
 
     def bump_price(factor):
-        def apply(c):
+        def apply(c, ctx2):
             c["economics"]["price_per_kwh"] = round(econ["price_per_kwh"] * factor, 4)
         return apply
 
     def bump_cost(factor):
-        def apply(c):
+        def apply(c, ctx2):
             c["economics"]["cleaning_cost"] = round(econ["cleaning_cost"] * factor, 0)
             for k in ("labor_cost", "water_cost", "equipment_cost"):
                 if c["economics"].get(k) is not None:
@@ -203,23 +205,29 @@ def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net
         return apply
 
     def bump_soiling(factor):
-        def apply(c):
+        def apply(c, ctx2):
             c["soiling"]["base_rate_per_day"] = round(soiling_cfg["base_rate_per_day"] * factor, 6)
             c["soiling"]["pm10_factor"] = round(soiling_cfg["pm10_factor"] * factor, 8)
         return apply
 
     def set_recovery(value):
-        def apply(c):
+        def apply(c, ctx2):
             c["economics"]["recovery_efficiency"] = value
         return apply
 
     def bump_generation(factor):
-        def apply(c):
-            c["economics"]["efficiency"] = round(econ["efficiency"] * factor, 4)
+        def apply(c, ctx2):
+            # P0-9 修复：PVGIS 分支使用 E_d 计算理论发电量（不使用 efficiency），
+            # 因此 PVGIS 模式下必须扰动 E_d，否则"发电水平"场景完全无效
+            theoretical = (ctx2 or {}).get("theoretical")
+            if theoretical and theoretical.get("E_d"):
+                theoretical["E_d"] = round(theoretical["E_d"] * factor, 4)
+            else:
+                c["economics"]["efficiency"] = round(econ["efficiency"] * factor, 4)
         return apply
 
     def set_rain_effect(value):
-        def apply(c):
+        def apply(c, ctx2):
             c["soiling"]["rain_clean_effect"] = value
         return apply
 
@@ -240,9 +248,10 @@ def sensitivity_analysis(config: dict, context: dict, base_action: str, base_net
     results = []
     for name, change, apply in scenarios:
         cfg2 = copy.deepcopy(config)
-        apply(cfg2)
+        ctx2 = copy.deepcopy(context)
+        apply(cfg2, ctx2)
         try:
-            m2 = compute_metrics(cfg2, context, include_sensitivity=False, soiling_override_ratio=soiling_override_ratio)
+            m2 = compute_metrics(cfg2, ctx2, include_sensitivity=False, soiling_override_ratio=soiling_override_ratio)
             action2 = m2["decision"]["action"]
             results.append(
                 {
@@ -277,7 +286,14 @@ def compute_metrics(config: dict, context: dict, include_sensitivity: bool = Tru
 
     insufficient = _check_data_sufficiency(config, context)
 
-    if insufficient and (len(days) < 2 or air.get("pm10") is None or (context.get("quality") == "fallback" and config.get("scenario") == "live")):
+    # P0-4 修复：live 模式下预报或空气质量任一关键源降级为 fallback 即数据不足，
+    # 不允许用模拟气象/空气质量给出真实 clean/defer 决策
+    forecast_quality = (context.get("forecast") or {}).get("quality")
+    air_quality = (context.get("air") or {}).get("quality")
+    critical_source_fallback = config.get("scenario") == "live" and (
+        "fallback" in (context.get("quality"), forecast_quality, air_quality)
+    )
+    if insufficient and (len(days) < 2 or air.get("pm10") is None or critical_source_fallback):
         return {
             "site": site,
             "soiling": {
@@ -343,7 +359,13 @@ def compute_metrics(config: dict, context: dict, include_sensitivity: bool = Tru
 
     rain_next48 = sum(d["rain"] for d in days[:2])
     wind_max = max(d["wind"] for d in days)
-    best = max(days, key=lambda d: d["irradiance"] - d["wind"] * 0.05 - d["rain"] * 2)
+    # P0-10 修复：只在满足安全阈值的日期中选 best_date，
+    # 避免把仍超风速/降雨阈值的日期推荐为作业窗口
+    safe_days = [d for d in days if d["rain"] < safety["rain_limit_mm"] and d["wind"] < safety["wind_limit_ms"]]
+    if safe_days:
+        best = max(safe_days, key=lambda d: d["irradiance"] - d["wind"] * 0.05 - d["rain"] * 2)
+    else:
+        best = {"date": None, "irradiance": None}
 
     weather_block = rain_next48 >= safety["rain_limit_mm"] or wind_max >= safety["wind_limit_ms"]
     min_interval = soiling_cfg.get("min_clean_interval_days", 14)

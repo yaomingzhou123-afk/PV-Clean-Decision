@@ -318,15 +318,18 @@ def run_safety_agent(metrics: dict, config: dict) -> dict:
     rain_blocked = (w.get("rain_next48") or 0) >= safety["rain_limit_mm"]
     wind_blocked = (w.get("wind_max") or 0) >= safety["wind_limit_ms"]
     interval_blocked = bool(d.get("interval_block"))
-    if rain_blocked or wind_blocked:
+    simulated_present = _simulated_present(sources)
+    # P0-5 修复：数据质量否决优先级最高（数据不足 > 天气 > 间隔）；
+    # P0-4 修复：live 模式下检查关键源是否含模拟记录，而非仅看整体 quality
+    if config.get("scenario") == "live" and (quality in ("demo", "fallback") or simulated_present):
+        veto_type = "data_quality"
+        veto_reason = "live 模式下关键数据源含模拟记录，不基于模拟数据执行真实决策"
+    elif rain_blocked or wind_blocked:
         veto_type = "weather"
         veto_reason = f"降水 {w['rain_next48']}mm ≥ {safety['rain_limit_mm']} 或风速 {w['wind_max']}m/s ≥ {safety['wind_limit_ms']}（用户配置阈值）"
     elif interval_blocked:
         veto_type = "interval"
         veto_reason = f"距上次清洗 {metrics['soiling'].get('days')} 天 < 最小间隔 {d.get('min_clean_interval_days')} 天"
-    elif quality in ("demo", "fallback") and config.get("scenario") == "live":
-        veto_type = "data_quality"
-        veto_reason = "live 模式下数据降级为模拟样例，不基于模拟数据执行真实决策"
 
     if veto_type:
         conclusion = f"否决清洗执行：{veto_reason}。安全约束优先级高于经济收益。"
@@ -383,7 +386,9 @@ def _rule_critic_checks(metrics: dict, agent_results: list) -> list:
                 "kind": "calculation_error",
             })
     safety = next((r for r in agent_results if r["agent_name"] == "safety"), None)
-    if safety and safety.get("recommendation") == "veto":
+    # P0-3 修复：只在天气否决时检查 Weather 结论矛盾；
+    # interval/data_quality 否决与天气窗口无关，不应误报
+    if safety and safety.get("recommendation") == "veto" and safety.get("veto_type") == "weather":
         conflicting = [r["agent_name"] for r in agent_results if r.get("recommendation") in ("window_suitable", "profitable") and r["agent_name"] in ("weather",)]
         if conflicting:
             issues.append({
@@ -395,7 +400,13 @@ def _rule_critic_checks(metrics: dict, agent_results: list) -> list:
     sources = _sources_of(metrics)
     simulated = [s["source"] for s in sources if s.get("is_simulated")]
     if simulated:
-        mentions_live = [r["agent_name"] for r in agent_results if "实时" in r.get("conclusion", "")]
+        # P0-3 修复：排除"非实时"/"不是实时"等否定表述，只检测声称基于实时数据的结论
+        mentions_live = [
+            r["agent_name"] for r in agent_results
+            if "实时" in r.get("conclusion", "")
+            and "非实时" not in r.get("conclusion", "")
+            and "不是实时" not in r.get("conclusion", "")
+        ]
         if mentions_live:
             issues.append({
                 "agent": "/".join(mentions_live),
@@ -522,7 +533,9 @@ def run_decision_agent(metrics: dict, config: dict, agent_results: list) -> dict
         veto_type = safety.get("veto_type")
         agent_action = {"weather": "defer", "interval": "hold", "data_quality": "insufficient_data"}.get(veto_type, "hold")
     elif critic and critic.get("recommendation") == "reject":
-        high_calc = [i for i in (critic.get("inputs_read") or {}).keys()]  # 不改变 action，仅记录
+        # P0-2 修复：Critic 高危 reject 阻止 clean 决策，降级为 hold
+        if rule_action == "clean":
+            agent_action = "hold"
     if agent_action != rule_action:
         agent_action = agent_action if _CONSERVATIVE_RANK.get(agent_action, 3) >= _CONSERVATIVE_RANK.get(rule_action, 3) else rule_action
 
@@ -537,6 +550,11 @@ def run_decision_agent(metrics: dict, config: dict, agent_results: list) -> dict
         conclusion = (
             f"最终决策：{agent_action}。安全 Agent 否决（{safety.get('veto_type')}）优先于经济收益，"
             f"规则引擎决策为 {rule_action}，按保守原则取 {agent_action}。理由链可追溯（见 decision_trace）。"
+        )
+    elif agent_action != rule_action:
+        conclusion = (
+            f"最终决策：{agent_action}。Critic 审查发现高危问题（reject），阻止清洗决策；"
+            f"规则引擎决策为 {rule_action}，按保守原则降级为 {agent_action}。理由链可追溯（见 decision_trace）。"
         )
     else:
         conclusion = (

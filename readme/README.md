@@ -24,7 +24,8 @@ pv-agent/
 ├─ backend/
 │  ├─ main.py           FastAPI 入口与流式接口（可直接运行）
 │  ├─ orchestrator.py   协商轮次编排
-│  ├─ agents.py         六个 Agent 与仲裁逻辑
+│  ├─ agent_team.py     七个 Agent（Weather/Soiling/PV Performance/Economic/Safety/Critic/Decision）
+│  ├─ agents.py         旧协商层（第二轮可视化 + 分区/延后仲裁）
 │  ├─ pv_model.py       发电量、污损、收益模型
 │  ├─ weather.py        公开气象与空气质量数据接入
 │  ├─ llm.py            可选 LLM 适配层

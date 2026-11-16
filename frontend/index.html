@@ -864,18 +864,19 @@ function updateQuality(dq) {
 
 function renderKpis(m) {
   const e = m.economics, s = m.soiling;
-  $("kpiTheory").innerHTML = fmt1(e.theory_mwh_day) + "<small>MWh</small>";
+  const dash = '<span class="empty">--</span>';
+  $("kpiTheory").innerHTML = e.theory_mwh_day == null ? dash : fmt1(e.theory_mwh_day) + "<small>MWh</small>";
   $("kpiTheoryFoot").textContent = e.theoretical_source === "pvgis"
     ? "PVGIS E_d " + fmt1(e.pvgis && e.pvgis.E_d) + " kWh/kWp"
     : "降级公式（气候均值缺失）";
-  $("kpiLoss").innerHTML = fmt1(s.loss_pct) + "<small>%</small>";
+  $("kpiLoss").innerHTML = s.loss_pct == null ? dash : fmt1(s.loss_pct) + "<small>%</small>";
   const methodText = s.method === "user_assumption" ? "手动假设" : "模型估算";
   const pm25Text = s.pm2_5 == null ? "--" : fmt1(s.pm2_5);
-  $("kpiLossFoot").textContent = "PM10 " + fmt1(s.pm10) + " · PM2.5 " + pm25Text + " · " + methodText + "（非实测）";
-  $("kpiNet").innerHTML = fmt(e.net_gain) + "<small>元</small>";
-  $("kpiNetFoot").textContent = "清洗成本 " + fmt(e.cleaning_cost) + " 元";
+  $("kpiLossFoot").textContent = "PM10 " + (s.pm10 == null ? "--" : fmt1(s.pm10)) + " · PM2.5 " + pm25Text + " · " + methodText + "（非实测）";
+  $("kpiNet").innerHTML = e.net_gain == null ? dash : fmt(e.net_gain) + "<small>元</small>";
+  $("kpiNetFoot").textContent = e.cleaning_cost == null ? "数据不足" : "清洗成本 " + fmt(e.cleaning_cost) + " 元";
   $("kpiPayback").innerHTML = (e.payback_days == null ? "--" : fmt1(e.payback_days)) + "<small>天</small>";
-  $("kpiPaybackFoot").textContent = "评估周期 " + e.horizon_days + " 天";
+  $("kpiPaybackFoot").textContent = "评估周期 " + (e.horizon_days || "--") + " 天";
 }
 
 function renderVerdict(m) {
@@ -892,12 +893,17 @@ function renderVerdict(m) {
   const row = (label, val, cls, width) =>
     '<div class="row ' + cls + '"><span class="k">' + esc(label) + '</span><span class="val">' + esc(val) + '</span>' +
     '<div class="bar ' + (cls === "neg" ? "neg" : "") + '"><i style="width:' + width + '%"></i></div></div>';
-  $("wf").innerHTML =
-    row("可恢复收益", fmt(e.horizon_revenue) + " 元", "", Math.max(2, num(e.horizon_revenue) / max * 100)) +
-    row("清洗成本", "-" + fmt(e.cleaning_cost) + " 元", "neg", Math.max(2, num(e.cleaning_cost) / max * 100)) +
-    row("停机损失", "-" + fmt(e.downtime_loss) + " 元", "neg", Math.max(2, num(e.downtime_loss) / max * 100)) +
-    '<div class="row total"><span class="k">净收益</span><span class="val">' + fmt(e.net_gain) + ' 元</span>' +
-    '<div class="bar"><i style="width:' + Math.min(100, Math.max(2, num(e.net_gain) / max * 100)) + '%"></i></div></div>';
+  // P1-4 修复：数据不足时不生成误导性的 0 值瀑布图
+  if (d.action === "insufficient_data" || e.horizon_revenue == null) {
+    $("wf").innerHTML = '<div class="empty">数据不足，未生成收益瀑布</div>';
+  } else {
+    $("wf").innerHTML =
+      row("可恢复收益", fmt(e.horizon_revenue) + " 元", "", Math.max(2, num(e.horizon_revenue) / max * 100)) +
+      row("清洗成本", "-" + fmt(e.cleaning_cost) + " 元", "neg", Math.max(2, num(e.cleaning_cost) / max * 100)) +
+      row("停机损失", "-" + fmt(e.downtime_loss) + " 元", "neg", Math.max(2, num(e.downtime_loss) / max * 100)) +
+      '<div class="row total"><span class="k">净收益</span><span class="val">' + fmt(e.net_gain) + ' 元</span>' +
+      '<div class="bar"><i style="width:' + Math.min(100, Math.max(2, num(e.net_gain) / max * 100)) + '%"></i></div></div>';
+  }
 
   const days = (m.weather && m.weather.days) || [];
   const best = m.weather && m.weather.best_date;
@@ -912,13 +918,21 @@ function renderVerdict(m) {
 
   const w = m.weather || {}, s2 = m.soiling || {};
   const envRow = (k, v) => '<div class="row"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span></div>';
+  const fmtOrDash = (v, unit) => v == null ? "--" : fmt1(v) + " " + unit;
   $("envSummary").innerHTML =
-    envRow("平均辐照", fmt1(w.avg_irradiance) + " kWh/m²") +
-    envRow("未来 48h 降雨", fmt1(w.rain_next48) + " mm") +
-    envRow("最大风速", fmt1(w.wind_max) + " m/s") +
-    envRow("PM10 / PM2.5", fmt1(s2.pm10) + " / " + (s2.pm2_5 == null ? "--" : fmt1(s2.pm2_5)) + " μg/m³");
+    envRow("平均辐照", fmtOrDash(w.avg_irradiance, "kWh/m²")) +
+    envRow("未来 48h 降雨", fmtOrDash(w.rain_next48, "mm")) +
+    envRow("最大风速", fmtOrDash(w.wind_max, "m/s")) +
+    envRow("PM10 / PM2.5", (s2.pm10 == null ? "--" : fmt1(s2.pm10)) + " / " + (s2.pm2_5 == null ? "--" : fmt1(s2.pm2_5)) + " μg/m³");
 
   const d3 = m.decision || {};
+  if (d3.action === "insufficient_data") {
+    // P1-4 修复：数据不足时显示明确的未评估状态，而非"未知"证据
+    $("verdictEvidence").innerHTML =
+      '<div class="t">决策证据</div>' +
+      '<div class="risk"><b>数据不足，未执行评估。</b><br/>' + esc(d3.reason || "") + '</div>';
+    return;
+  }
   const evChip = (label, pass, passText, blockText) =>
     '<span class="ev ' + (pass ? "pass" : "block") + '">' + esc(label) + "：" + esc(pass ? passText : blockText) + '</span>';
   const weatherOk = d3.weather_block === false;
@@ -1244,9 +1258,24 @@ function buildReport(m, s) {
     lines.push("");
   }
   lines.push("## 六、数据来源", "");
-  lines.push("- 辐照/降水/风速/云量：Open-Meteo Forecast（免费，无 Key）");
-  lines.push("- PM10/沙尘：Open-Meteo Air Quality（免费，无 Key）");
-  lines.push("- 理论发电量：PVGIS（欧盟 JRC，ERA5 2005-2023）");
+  // P0-8 修复：按实际 data_sources 动态生成，标注模拟/缓存/失败，不把模拟数据包装成真实接口
+  const kindLabelRpt = { forecast: "预报", historical: "历史", user_input: "输入", simulation: "模拟" };
+  const srcRecords = (m.data_quality && m.data_quality.data_sources) || [];
+  if (srcRecords.length) {
+    srcRecords.forEach(r => {
+      const flags = [];
+      if (r.is_simulated) flags.push("模拟");
+      if (r.is_cached) flags.push("缓存");
+      if (r.status === "error") flags.push("获取失败：" + (r.error_message || "未知原因"));
+      lines.push(
+        "- " + (r.source || "--") + "（" + (kindLabelRpt[r.data_kind] || r.data_kind || "--") +
+        "，覆盖 " + (r.valid_time || "--") +
+        (flags.length ? "，" + flags.join("，") : "") + "）"
+      );
+    });
+  } else {
+    lines.push("- 暂无数据源记录");
+  }
   lines.push("- 电价：新疆燃煤标杆上网电价政策值（约 0.25 元/kWh）");
   lines.push("- 清洗成本与污损参数：公开招标区间与 IEA PVPS 文献，见 pv_config.json sources");
   lines.push("", "> 收益为估算模型，执行前请结合现场检测复核。");
