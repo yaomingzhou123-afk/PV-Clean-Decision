@@ -68,9 +68,17 @@ class MCPClient:
             self.proc.stdin.flush()
         except (BrokenPipeError, ValueError) as e:
             raise RuntimeError(f"MCP server pipe broken: {e}") from e
-        if payload.get("id") is None:
+        req_id = payload.get("id")
+        if req_id is None:
             return None
-        return json.loads(self._readline_timeout())
+        # P0-1 修复：校验响应 id 匹配，丢弃超时后残留的错位响应，避免永久错位
+        while True:
+            resp = json.loads(self._readline_timeout())
+            if resp.get("id") == req_id:
+                return resp
+            logger.warning(
+                "丢弃错位 MCP 响应：期望 id=%s，实际 id=%s", req_id, resp.get("id")
+            )
 
     def request(self, method: str, params: dict | None = None) -> dict:
         self._next_id += 1

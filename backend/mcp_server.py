@@ -115,6 +115,10 @@ def _call_tool(name: str, args: dict) -> dict:
             mode = args.get("mode", config.get("scenario", "demo"))
             if mode not in ("live", "demo"):
                 raise ValueError("mode 必须为 live 或 demo")
+            # P0-2 修复：mode 与 config.scenario 解耦时强制同步，
+            # 确保 pv_model 的降级防线（scenario=="live" + fallback）能正确触发
+            if mode != config.get("scenario"):
+                config = {**config, "scenario": mode}
             if mode == "demo":
                 context = demo_context()
             else:

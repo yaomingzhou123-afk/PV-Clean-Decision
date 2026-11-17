@@ -76,6 +76,10 @@ def dispatch(name: str, args: dict, config: dict) -> dict:
         }
     if name == "calc_economics":
         mode = args.get("mode") or config.get("scenario", "demo")
+        # P0-2 修复：mode 与 config.scenario 解耦时强制同步，
+        # 确保 pv_model 的降级防线（scenario=="live" + fallback）能正确触发
+        if mode != config.get("scenario"):
+            config = {**config, "scenario": mode}
         context = demo_context() if mode == "demo" else dispatch("get_site_data", {"mode": "live"}, config)
         return compute_metrics(config, context)
     raise KeyError(f"unknown tool: {name}")
