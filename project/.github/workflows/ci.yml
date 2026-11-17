@@ -18,11 +18,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: 安装依赖
-        run: python -m pip install -r requirements.txt
+        run: python -m pip install -r project/requirements.txt
       - name: 编译检查
-        run: python -m compileall backend -q
+        run: python -m compileall project/backend -q
       - name: 运行测试
-        run: python -m pytest backend/tests -q
+        run: python -m pytest project/backend/tests -q
         env:
           MCP_ENABLED: "0"
 
@@ -40,7 +40,7 @@ jobs:
         run: |
           python3 - <<'EOF' > /tmp/inline.js
           import re
-          html = open("frontend/index.html", encoding="utf-8").read()
+          html = open("project/frontend/index.html", encoding="utf-8").read()
           m = re.search(r"<script>(.*?)</script>", html, re.S)
           print(m.group(1))
           EOF
@@ -63,7 +63,7 @@ jobs:
                       while self.stack and self.stack[-1]!=tag: self.stack.pop()
                       if self.stack: self.stack.pop()
                   else: self.errs.append(('unmatched',tag))
-          p=P(); p.feed(open("frontend/index.html",encoding="utf-8").read())
+          p=P(); p.feed(open("project/frontend/index.html",encoding="utf-8").read())
           assert not p.stack and not p.errs, f"HTML 结构错误: unclosed={p.stack} errors={p.errs}"
           print("HTML 结构检查通过")
           EOF
